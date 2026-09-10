@@ -1,5 +1,8 @@
 const axios = require('axios');
 
+const weatherCache = new Map();
+const WEATHER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
 class OpenMeteoProvider {
   /**
    * Fetches soil moisture for the given coordinates.
@@ -110,7 +113,8 @@ class OpenMeteoProvider {
         hourly.time.length > 0
       ) {
         const refTimeMs = recordedAt.getTime();
-        const windowStartMs = refTimeMs - 24 * 60 * 60 * 1000;
+        // Allow covering the preceding 24 full hourly intervals even when current observation time has a non-zero minute offset (e.g. :15, :30, :45)
+        const windowStartMs = refTimeMs - 25 * 60 * 60 * 1000;
 
         const matchedHourly = [];
         let hasInvalidValue = false;
@@ -209,10 +213,77 @@ class OpenMeteoProvider {
 
   /**
    * Fetches weather telemetry (temperature, humidity, wind, 24h rainfall, current precipitation, rain probability)
-   * for the given coordinates.
+   * for the given coordinates with resilient caching and fast lightweight fallback.
    */
   static async fetchWeather(lat, lon) {
-    return OpenMeteoProvider.fetchRainfall(lat, lon);
+    if (typeof lat !== 'number' || typeof lon !== 'number' || isNaN(lat) || isNaN(lon)) {
+      throw new Error('Invalid coordinates');
+    }
+
+    const isTest = process.env.NODE_ENV === 'test';
+    const normLat = Math.round(lat * 100) / 100;
+    const normLon = Math.round(lon * 100) / 100;
+    const cacheKey = `${normLat}_${normLon}`;
+
+    if (!isTest) {
+      const cached = weatherCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < WEATHER_CACHE_TTL_MS)) {
+        return cached.data;
+      }
+    }
+
+    let lastError;
+    // Primary attempt: Full 24h rainfall, hourly series and daily forecast
+    try {
+      const data = await OpenMeteoProvider.fetchRainfall(lat, lon);
+      if (!isTest) {
+        weatherCache.set(cacheKey, { timestamp: Date.now(), data });
+      }
+      return data;
+    } catch (err) {
+      lastError = err;
+    }
+
+    // Fallback: If heavy request timed out or was rate-limited on cloud server, attempt fast lightweight current query
+    try {
+      const timeout = Math.min(parseInt(process.env.WEATHER_API_TIMEOUT_MS, 10) || 10000, 6000);
+      const fastResponse = await axios.get('https://api.open-meteo.com/v1/forecast', {
+        params: {
+          latitude: lat,
+          longitude: lon,
+          current: 'precipitation,temperature_2m,relative_humidity_2m,wind_speed_10m',
+          daily: 'precipitation_sum,precipitation_probability_max'
+        },
+        headers: {
+          'User-Agent': 'LandslideEarlyWarning/1.0.0 (https://github.com/chinmaya-pahadsingh/landslide)'
+        },
+        timeout
+      });
+
+      const current = fastResponse.data?.current;
+      if (current && current.temperature_2m !== undefined) {
+        const recordedAt = current.time ? new Date(current.time) : new Date();
+        const daily = fastResponse.data?.daily;
+        const fallbackData = {
+          precipitation: typeof current.precipitation === 'number' ? current.precipitation : 0,
+          precipitation24h: typeof daily?.precipitation_sum?.[0] === 'number' ? Math.round(daily.precipitation_sum[0] * 10) / 10 : null,
+          temperature: typeof current.temperature_2m === 'number' ? Math.round(current.temperature_2m * 10) / 10 : null,
+          humidity: typeof current.relative_humidity_2m === 'number' ? Math.round(current.relative_humidity_2m) : null,
+          windSpeed: typeof current.wind_speed_10m === 'number' ? Math.round(current.wind_speed_10m * 10) / 10 : null,
+          precipitationProbability: typeof daily?.precipitation_probability_max?.[0] === 'number' ? daily.precipitation_probability_max[0] : null,
+          dailyForecast: null,
+          recordedAt
+        };
+        if (!isTest) {
+          weatherCache.set(cacheKey, { timestamp: Date.now(), data: fallbackData });
+        }
+        return fallbackData;
+      }
+    } catch (fallbackErr) {
+      // Fast fallback also failed
+    }
+
+    throw lastError || new Error('Weather fetch failed');
   }
 }
 

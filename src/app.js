@@ -40,6 +40,7 @@ const corsOptions = {
           originUrl.hostname.endsWith('.lhr.life') ||
           originUrl.hostname.endsWith('.serveousercontent.com') ||
           originUrl.hostname.endsWith('.trycloudflare.com') ||
+          originUrl.hostname.endsWith('.loca.lt') ||
           originUrl.hostname.endsWith('.pinggy.link') ||
           originUrl.hostname.endsWith('.onrender.com') ||
           originUrl.hostname.endsWith('.railway.app')

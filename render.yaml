@@ -3,7 +3,7 @@ services:
     name: landslide-early-warning
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build && (pip install -r requirements.txt || pip3 install -r requirements.txt || true)
+    buildCommand: npm install --include=dev && npm run build && (pip install -r requirements.txt || pip3 install -r requirements.txt || true)
     startCommand: node server.js
     envVars:
       - key: NODE_ENV

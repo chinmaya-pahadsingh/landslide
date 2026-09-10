@@ -94,6 +94,13 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeModalCard, setActiveModalCard] = useState(null); // 'regional', 'risk', 'areas', 'zones', 'roads', 'rainfall'
 
+  // Dashboard entrance animation state
+  const [dashboardReady, setDashboardReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDashboardReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const fetchEvents = async () => {
     try {
       setEventsLoading(true);
@@ -858,9 +865,9 @@ export default function Dashboard() {
   const isAnyLoading = eventsLoading || rainfallLoading || soilMoistureLoading || infraLoading || locationLoading;
 
   return (
-    <div className="dashboard-root animate-fade-in">
+    <div className={`dashboard-root${dashboardReady ? ' db-ready' : ''}`}>
       {/* Top Controls & Status Bar */}
-      <div className="dashboard-top-bar">
+      <div className="dashboard-top-bar db-reveal db-reveal-1">
         <div className="dashboard-search-container">
           <AreaSearch 
             onLocationSelect={(loc) => setSelectedLocation(loc)} 
@@ -898,7 +905,7 @@ export default function Dashboard() {
       {/* =========================================================================
           1. HERO MONITORING SECTION (Wide Hero Card + Stacked Right Cards)
           ========================================================================= */}
-      <div className="hero-monitoring-grid">
+      <div className="hero-monitoring-grid db-reveal db-reveal-2">
         {/* Large Left Hero Card */}
         <div className="hero-main-card glass-panel">
           <div className="hero-card-header">
@@ -1172,7 +1179,7 @@ export default function Dashboard() {
       {/* =========================================================================
           2. MIDDLE 4-METRICS ROW (High Risk Areas, People at Risk, Roads, Rain)
           ========================================================================= */}
-      <div className="middle-metrics-grid">
+      <div className="middle-metrics-grid db-reveal db-reveal-3">
         {/* Metric 1: High Risk Areas */}
         <div 
           className={`metric-glass-card glass-panel ${!hasUsableRisk ? 'disabled' : ''}`} 
@@ -1336,7 +1343,7 @@ export default function Dashboard() {
       {/* =========================================================================
           3. BOTTOM COMMAND CENTER ROW (Recent Alerts, Field Reports, Infrastructure, History)
           ========================================================================= */}
-      <div className="command-bottom-grid">
+      <div className="command-bottom-grid db-reveal db-reveal-4">
         {/* Card 1: Recent Alerts */}
         <div className="command-glass-panel glass-panel">
           <div className="panel-header-row">

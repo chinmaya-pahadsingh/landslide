@@ -11,6 +11,47 @@
   width: 100%;
 }
 
+/* ==========================================================================
+   Dashboard Entrance Animation — Progressive Reveal (6-Phase)
+   ========================================================================== */
+@keyframes db-section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Base state: hidden until .db-ready is applied to root */
+.db-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* When dashboard root gets .db-ready, trigger staggered reveal per section */
+.db-ready .db-reveal {
+  animation: db-section-reveal 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Phase delays */
+.db-ready .db-reveal-1 { animation-delay: 0.04s; }  /* Top bar — first */
+.db-ready .db-reveal-2 { animation-delay: 0.12s; }  /* Hero section */
+.db-ready .db-reveal-3 { animation-delay: 0.22s; }  /* Metric cards */
+.db-ready .db-reveal-4 { animation-delay: 0.34s; }  /* Command bottom panels */
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .db-reveal {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+}
+
+
 /* Top Telemetry & Control Bar */
 .dashboard-top-bar {
   display: flex;

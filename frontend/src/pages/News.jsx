@@ -101,7 +101,7 @@ export default function News() {
   const mediaCount = disasterArticles.length - officialCount;
 
   return (
-    <div className="page-container animate-fade-in">
+    <div className="page-container drawer-slide-in">
       {/* Header */}
       <div className="news-header-card glass-card">
         <div className="news-header-info">

@@ -393,7 +393,7 @@ export default function FieldReports() {
   };
 
   return (
-    <div className="page-container animate-fade-in field-reports-page">
+    <div className="page-container drawer-slide-in field-reports-page">
       {/* Command Center Header */}
       <div className="field-reports-header glass-panel">
         <div className="field-reports-header-content">

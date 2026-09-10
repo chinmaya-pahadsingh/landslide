@@ -120,7 +120,7 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
   if (!selectedLocation) return null;
 
   return (
-    <div className="area-intelligence-panel glass-panel animate-fade-in">
+    <div className="area-intelligence-panel glass-panel drawer-slide-in">
       <div className="ai-panel-header">
         <h3 className="ai-panel-title">
           <Map size={18} />

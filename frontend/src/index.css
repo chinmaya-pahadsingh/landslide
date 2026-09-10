@@ -146,6 +146,36 @@ a {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Shared left-to-right drawer panel entrance animation */
+@keyframes drawerSlideIn {
+  from {
+    opacity: 0.6;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawerSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0.6;
+    transform: translateX(-100%);
+  }
+}
+
+/* Utility classes for consistent drawer behaviour across panel pages */
+.drawer-slide-in {
+  animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

@@ -137,7 +137,7 @@ export default function Alerts() {
   };
 
   return (
-    <div className="page-container animate-fade-in alerts-page-wrapper">
+    <div className="page-container drawer-slide-in alerts-page-wrapper">
       {/* Header */}
       <div className="alerts-header glass-card">
         <div className="alerts-header-info">

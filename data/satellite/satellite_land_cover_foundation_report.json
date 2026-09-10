@@ -1,0 +1,123 @@
+{
+  "timestamp": "2026-09-09T23:32:00.000Z",
+  "step": "STEP 54B — SATELLITE LAND-COVER EVIDENCE FOUNDATION",
+  "provider_details": {
+    "provider_name": "Sentinel-2 10m Land Cover (Impact Observatory / Esri Living Atlas)",
+    "satellite_constellation": "European Space Agency (ESA) Sentinel-2 (twin optical/multispectral satellites MSI)",
+    "spatial_resolution": "10 meters per pixel",
+    "coverage": "Global annual time-series (covering Northeast India, Himalayas, and worldwide)",
+    "genuinely_satellite_derived": true,
+    "scientific_provenance": "Classified directly from Sentinel-2 L2A surface reflectance imagery using deep learning models trained by Impact Observatory in partnership with Esri and Microsoft. Ground-truthed and benchmarked against global reference data.",
+    "service_url": "https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/identify",
+    "service_protocol": "Esri ImageServer REST identify operation (EPSG:4326 geometry point query)"
+  },
+  "endpoint": {
+    "method": "GET",
+    "path": "/api/satellite/land-cover",
+    "query_parameters": {
+      "lat": "number (-90 to 90)",
+      "lon": "number (-180 to 180)"
+    },
+    "authentication": "Bearer JWT (authenticate middleware)",
+    "rate_limiting": "60 requests per minute per IP"
+  },
+  "land_cover_classes": [
+    {
+      "code": 1,
+      "name": "Water",
+      "category": "water",
+      "description": "Areas where water was predominantly present throughout the year: rivers, ponds, lakes, reservoirs"
+    },
+    {
+      "code": 2,
+      "name": "Trees",
+      "category": "vegetation",
+      "description": "Any significant clustering of tall dense vegetation: closed forest, woodland, open tree canopy"
+    },
+    {
+      "code": 4,
+      "name": "Flooded Vegetation",
+      "category": "vegetation",
+      "description": "Areas of any type of vegetation with obvious intermixing of water: wetlands, swamps, rice paddies"
+    },
+    {
+      "code": 5,
+      "name": "Crops",
+      "category": "cropland",
+      "description": "Human-planted/managed cereals, grasses, and crops: agricultural fields"
+    },
+    {
+      "code": 7,
+      "name": "Built Area",
+      "category": "built_up",
+      "description": "Human-made structures: buildings, asphalt, paved roads, infrastructure"
+    },
+    {
+      "code": 8,
+      "name": "Bare Ground",
+      "category": "bare",
+      "description": "Areas of bare soil, sand, exposed rocks, quarries, steep barren cliffs, landslide scarps"
+    },
+    {
+      "code": 9,
+      "name": "Snow/Ice",
+      "category": "other",
+      "description": "Areas of permanent snow, glaciers, and alpine snowfields"
+    },
+    {
+      "code": 10,
+      "name": "Clouds",
+      "category": "unknown",
+      "description": "Persistent cloud cover obscuring land surface"
+    },
+    {
+      "code": 11,
+      "name": "Rangeland",
+      "category": "vegetation",
+      "description": "Open spaces covered by homogenous grasses, shrubs, sparse trees, and alpine meadow"
+    }
+  ],
+  "standard_interoperability": {
+    "esa_worldcover_compatible": true,
+    "esa_worldcover_classes_supported": [10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100]
+  },
+  "fallback_and_error_behavior": {
+    "zero_substitution_prohibited": "Unavailable, unclassified, or failed provider data is strictly assigned category: 'unknown' and classCode: null. It is NEVER converted to 0 or treated as 'safe' vegetation.",
+    "confidence_policy": "Strictly null. No arbitrary or fabricated confidence score is generated since the provider identify endpoint returns discrete pixel classes without continuous softmax distributions.",
+    "timeout_handling": "5000ms bounded timeout with AbortController/Axios; returns isTimeout: true, available: false, category: 'unknown'.",
+    "rate_limit_handling": "HTTP 429 detection sets isRateLimited: true, available: false, category: 'unknown', preventing wasted retries.",
+    "caching": "In-memory LRU-style cache bounded at 1,000 items with 1-hour TTL, keyed on 4-decimal coordinates (~11m spatial resolution).",
+    "request_deduplication": "In-flight promises for identical rounded coordinates share the active request, preventing duplicate simultaneous network calls.",
+    "core_engine_isolation": "Satellite land cover failure never impacts or halts the core risk engine, early warning pipeline, or database services."
+  },
+  "tests_executed": [
+    "Sentinel-2 class code to category mappings (Trees -> vegetation, Bare Ground -> bare, Water -> water, Crops -> cropland, Built Area -> built_up, Clouds -> unknown)",
+    "ESA WorldCover class code compatibility (Bare -> bare, Grassland -> vegetation)",
+    "Unrecognized/empty class code fallback to category: 'unknown' and classCode: null",
+    "Coordinate validation (null/missing, NaN/strings, out-of-range latitude, out-of-range longitude, valid extremes)",
+    "Successful provider response handling and schema compliance",
+    "Provider failure handling (available: false, category: 'unknown', error message preserved)",
+    "Timeout handling (isTimeout: true, available: false, category: 'unknown')",
+    "HTTP 429 rate limit handling (isRateLimited: true, available: false, category: 'unknown')",
+    "Strict safety assertion: missing/failed data is never converted to a safe category or zero",
+    "Strict truthfulness assertion: confidence is strictly null",
+    "In-memory caching behavior: repeated queries return cached: true without provider invocation; clearCache works as intended",
+    "Request deduplication: 3 concurrent requests execute exactly 1 provider call",
+    "Controller HTTP 400 rejection for missing query parameters",
+    "Controller HTTP 400 rejection for out-of-bounds coordinates",
+    "Controller HTTP 200 response with normalized data payload for valid coordinates",
+    "Route authentication: GET /api/satellite/land-cover without token returns HTTP 401",
+    "Route authentication: GET /api/satellite/land-cover with malformed token returns HTTP 401"
+  ],
+  "test_totals": {
+    "total_tests": 28,
+    "passed": 28,
+    "failed": 0
+  },
+  "limitations": [
+    "Point queries sample the 10m Sentinel-2 pixel at the exact given coordinate; micro-scale spatial heterogeneity within 10 meters is not resolved.",
+    "Identify operations reflect the annual composite classification (2024/2025) rather than daily dynamic changes.",
+    "Persistent cloud-covered alpine summits may return class 10 (Clouds), which is handled safely as unknown rather than guessed.",
+    "Full multispectral optical bands (B2-B12) and SAR phase coherence are not downloaded locally, preserving lightweight performance."
+  ]
+}

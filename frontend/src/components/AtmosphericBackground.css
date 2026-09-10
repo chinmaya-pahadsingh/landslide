@@ -1,0 +1,99 @@
+/* Atmospheric Environmental Background - Northeast India Command Center */
+
+.atmospheric-bg-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sky-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #050c10 0%,
+    #08161d 22%,
+    #0c212a 45%,
+    #09171d 72%,
+    #040a0d 100%
+  );
+  transition: background 0.4s ease;
+}
+
+[data-theme='light'] .sky-gradient {
+  background: linear-gradient(
+    180deg,
+    #cfdce3 0%,
+    #b8cdd6 30%,
+    #a2bcc8 60%,
+    #8baab7 100%
+  );
+}
+
+/* Ambient Mist & Storm Glows */
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+  opacity: 0.6;
+}
+
+.storm-glow {
+  top: 5%;
+  right: 20%;
+  width: 600px;
+  height: 350px;
+  background: radial-gradient(ellipse, rgba(50, 120, 140, 0.28) 0%, transparent 70%);
+}
+
+.valley-mist-glow {
+  top: 38%;
+  left: 10%;
+  width: 80%;
+  height: 250px;
+  background: radial-gradient(ellipse, rgba(40, 95, 110, 0.22) 0%, transparent 75%);
+}
+
+.cyan-accent-glow {
+  bottom: 20%;
+  left: 25%;
+  width: 500px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+}
+
+[data-theme='light'] .ambient-glow {
+  opacity: 0.25;
+}
+
+/* Layered Vector Mountain & Forest Layer */
+.mountain-vector-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.95;
+  transition: opacity 0.4s ease;
+}
+
+[data-theme='light'] .mountain-vector-layer {
+  opacity: 0.5;
+  --dist-mtn-top: #839ea9;
+  --dist-mtn-bot: #5b7681;
+  --dist-mtn-base: #3f555e;
+  
+  --mid-mtn-top: #475f68;
+  --mid-mtn-bot: #2c4149;
+  --mid-mtn-base: #1b2c32;
+  
+  --forest-top: #2c4149;
+  --forest-mid: #1d2d34;
+  --forest-base: #111e22;
+}

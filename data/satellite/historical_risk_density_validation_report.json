@@ -1,0 +1,185 @@
+{
+  "audit_title": "STEP 54D-VALIDATION — HISTORICAL RISK DENSITY THRESHOLD AUDIT",
+  "audit_type": "READ-ONLY AUDIT — NO SOURCE CODE OR DATA MODIFIED.",
+  "timestamp": "2026-09-10T01:14:00.000Z",
+  "historical_data_audit": {
+    "total_records_in_db": 176,
+    "historical_records_count": 176,
+    "active_records_count": 0,
+    "valid_coordinate_count": 176,
+    "invalid_coordinate_count": 0,
+    "geographic_bounding_box": {
+      "min_latitude": 30.8170,
+      "max_latitude": 31.3500,
+      "min_longitude": 76.7900,
+      "max_longitude": 77.2540,
+      "latitude_span_degrees": 0.5330,
+      "longitude_span_degrees": 0.4640,
+      "approx_bounding_box_km": "59.3 km (North-South) x 44.2 km (East-West)"
+    },
+    "provenance_and_regional_distribution": {
+      "primary_source": "NASA Global Landslide Catalog (GLC) (Disaster Charter, July 9, 2023 Northern India event)",
+      "dataset_region": "Himachal Pradesh / Uttarakhand foothills corridor",
+      "northeast_region_coverage_in_current_db": {
+        "Assam": 0,
+        "Meghalaya": 0,
+        "Sikkim": 0,
+        "Arunachal_Pradesh": 0,
+        "Mizoram": 0,
+        "Nagaland": 0,
+        "Tripura": 0,
+        "Manipur": 0,
+        "notes": "All 176 historical records in MongoDB originate from the July 2023 disaster event. No Northeast India records are in the current database collection."
+      }
+    },
+    "duplicate_and_colocated_points": {
+      "unique_coordinate_pairs": 152,
+      "single_occurrence_points": 135,
+      "colocated_points": 41,
+      "colocated_coordinate_pairs": 17
+    }
+  },
+  "neighborhood_density_audit": {
+    "algorithm": "Great-circle distance using Haversine formula",
+    "neighborhood_radius_km": 10,
+    "statistics_within_10km": {
+      "min_count": 0,
+      "max_count": 124,
+      "mean_count": 81.18,
+      "median_count_p50": 88,
+      "percentile_p10": 40,
+      "percentile_p25": 50,
+      "percentile_p75": 108,
+      "percentile_p90": 119,
+      "percentile_p95": 120
+    }
+  },
+  "current_threshold_validation": {
+    "current_threshold_definitions": {
+      "HIGH": ">= 80 records within 10 km",
+      "MEDIUM": "20 to 79 records within 10 km",
+      "LOW": "3 to 19 records within 10 km",
+      "INSUFFICIENT": "< 3 records within 10 km"
+    },
+    "empirical_category_distribution": {
+      "HIGH": {
+        "count": 115,
+        "percentage": 65.34,
+        "color": "hsl(346, 87%, 43%) [RED]"
+      },
+      "MEDIUM": {
+        "count": 54,
+        "percentage": 30.68,
+        "color": "hsl(48, 96%, 53%) [YELLOW/AMBER]"
+      },
+      "LOW": {
+        "count": 1,
+        "percentage": 0.57,
+        "color": "hsl(142, 71%, 45%) [GREEN]"
+      },
+      "INSUFFICIENT": {
+        "count": 6,
+        "percentage": 3.41,
+        "color": "hsl(215, 16%, 65%) [GREY]"
+      },
+      "total_classified": 176
+    }
+  },
+  "diagnostic_problem_check": {
+    "A_almost_everything_becomes_high": {
+      "finding": true,
+      "detail": "65.3% (115 of 176 records) are classified as HIGH. The threshold of 80 is below the empirical median of 88."
+    },
+    "B_almost_everything_becomes_medium": {
+      "finding": false,
+      "detail": "30.7% (54 of 176 records) are classified as MEDIUM."
+    },
+    "C_almost_everything_becomes_low": {
+      "finding": false,
+      "detail": "LOW is virtually empty: exactly 1 single record (0.57%) falls in the 3-19 interval."
+    },
+    "D_almost_everything_becomes_insufficient": {
+      "finding": false,
+      "detail": "Only 3.4% (6 of 176 records) fall into INSUFFICIENT."
+    },
+    "E_useful_geographic_differentiation": {
+      "finding": false,
+      "detail": "The map displays an almost solid red core with a yellow fringe, almost zero green (1 point), and no intermediate density resolution."
+    },
+    "F_excessive_overlap_from_10km_radius": {
+      "finding": true,
+      "detail": "In a compact 59 km x 44 km disaster inventory, a 10 km radius circle covers ~20% of the entire area, aggregating up to 124 neighboring points."
+    },
+    "G_thresholds_unsupported_by_actual_dataset": {
+      "finding": true,
+      "detail": "Thresholds were conceived a priori without empirical reference to the cluster distribution. The LOW band [3, 19] fails entirely because once points leave the perimeter (<3), they immediately jump to 20+ neighbors."
+    },
+    "H_deterministic_and_reproducible": {
+      "finding": true,
+      "detail": "The Haversine calculation and preclassifyHistoricalEvents function are 100% deterministic and mathematically reproducible."
+    }
+  },
+  "scientific_and_semantic_check": {
+    "past_activity_semantics_preserved": true,
+    "labels_used": [
+      "High Historical Landslide Activity",
+      "Medium Historical Landslide Activity",
+      "Low Historical Landslide Activity",
+      "Insufficient Historical Evidence"
+    ],
+    "no_current_risk_claims": true,
+    "no_future_prediction_claims": true,
+    "no_early_warning_trigger": true,
+    "early_warning_pipeline_isolation": "Verified that historical events are filtered to Historical mode only and never dispatched to the early-warning decision engine."
+  },
+  "map_usefulness_assessment": {
+    "for_northeast_india": "Low utility currently because zero historical records exist in the database for the Northeast Region (Assam, Meghalaya, Sikkim, etc.). Any NER query correctly indicates 'Insufficient Historical Evidence'.",
+    "for_mapped_cluster": "Moderate utility for identifying the overall epicenter, but poor gradient utility due to threshold skew: 65% of all markers render red and only 1 marker renders green."
+  },
+  "verdict": "THRESHOLDS: NEED REVISION",
+  "rationale": "The current threshold set (80 / 20 / 3) creates a statistically degenerate distribution: 65.3% HIGH, 30.7% MEDIUM, 0.6% LOW (1 point), and 3.4% INSUFFICIENT. The LOW category is practically non-existent. A defensible classification must provide a balanced gradient across the empirical density spectrum.",
+  "data_driven_alternatives_for_future_revision": {
+    "alternative_1_quantile_based": {
+      "description": "Based on empirical quantiles (p75 for High, p35 for Medium, p10 for Low)",
+      "thresholds": {
+        "HIGH": ">= 105 records within 10 km",
+        "MEDIUM": "60 to 104 records within 10 km",
+        "LOW": "25 to 59 records within 10 km",
+        "INSUFFICIENT": "< 25 records within 10 km"
+      },
+      "resulting_distribution": {
+        "HIGH": "44 (25.0%)",
+        "MEDIUM": "84 (47.7%)",
+        "LOW": "39 (22.2%)",
+        "INSUFFICIENT": "9 (5.1%)"
+      }
+    },
+    "alternative_2_balanced_density": {
+      "description": "Round numbers providing balanced four-tier distribution",
+      "thresholds": {
+        "HIGH": ">= 100 records within 10 km",
+        "MEDIUM": "70 to 99 records within 10 km",
+        "LOW": "30 to 69 records within 10 km",
+        "INSUFFICIENT": "< 30 records within 10 km"
+      },
+      "resulting_distribution": {
+        "HIGH": "50 (28.4%)",
+        "MEDIUM": "75 (42.6%)",
+        "LOW": "42 (23.9%)",
+        "INSUFFICIENT": "9 (5.1%)"
+      }
+    },
+    "alternative_3_radius_refinement": {
+      "description": "Refine radius to 5 km to capture localized micro-catchment corridors",
+      "radius_km": 5,
+      "stats_at_5km": "min=0, max=72, median=32, p75=59",
+      "suggested_5km_thresholds": {
+        "HIGH": ">= 50 records within 5 km (~25%)",
+        "MEDIUM": "25 to 49 records within 5 km (~45%)",
+        "LOW": "10 to 24 records within 5 km (~20%)",
+        "INSUFFICIENT": "< 10 records within 5 km (~10%)"
+      }
+    }
+  },
+  "audit_conclusion": "READ-ONLY AUDIT COMPLETE. No source code, models, thresholds, or datasets were modified."
+}

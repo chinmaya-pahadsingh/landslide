@@ -1,0 +1,46 @@
+{
+  "model_type": "XGBoost Binary Classifier",
+  "task": "Dynamic Landslide Trigger Modeling",
+  "features": [
+    "elevation_m",
+    "slope_deg",
+    "latitude",
+    "longitude",
+    "precipitation_event_day_mm",
+    "precipitation_prev_24h_mm",
+    "precipitation_prev_3d_mm",
+    "precipitation_prev_7d_mm",
+    "precipitation_prev_30d_mm"
+  ],
+  "feature_order": [
+    "elevation_m",
+    "slope_deg",
+    "latitude",
+    "longitude",
+    "precipitation_event_day_mm",
+    "precipitation_prev_24h_mm",
+    "precipitation_prev_3d_mm",
+    "precipitation_prev_7d_mm",
+    "precipitation_prev_30d_mm"
+  ],
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 4,
+    "learning_rate": 0.03,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 2,
+    "gamma": 1.0,
+    "eval_metric": "logloss",
+    "random_state": 42,
+    "early_stopping_rounds": 20,
+    "tree_method": "hist"
+  },
+  "best_iteration": 197,
+  "validation_strategy": "Temporal Date Grouping (observation_date)",
+  "train_size": 1678,
+  "val_size": 300,
+  "test_size": 290,
+  "random_seed": 42,
+  "saved_at": "2026-09-10T07:28:17.567476+00:00"
+}

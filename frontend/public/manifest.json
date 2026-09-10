@@ -1,0 +1,17 @@
+{
+  "name": "Early Warning & Landslide Risk Monitoring",
+  "short_name": "NER-LMRS",
+  "description": "Northeast Region Landslide Risk Monitoring System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

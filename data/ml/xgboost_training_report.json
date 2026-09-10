@@ -1,0 +1,144 @@
+{
+  "timestamp": "2026-09-10T07:28:17.629321+00:00",
+  "xgboost_version": "3.4.1",
+  "python_version": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+  "scikit_learn_version": "1.9.0",
+  "total_training_duration_seconds": 0.75,
+  "susceptibility_model": {
+    "dataset_path": "data/gsi/ml_susceptibility_dataset_v1.csv",
+    "model_path": "data/ml/xgboost_susceptibility_model.json",
+    "dataset_size": 20472,
+    "features": [
+      "elevation_m",
+      "slope_deg",
+      "latitude",
+      "longitude"
+    ],
+    "train_val_test_split": "70% / 15% / 15% (Spatial Grid Blocking at 0.5 deg)",
+    "train_size": 13542,
+    "val_size": 3195,
+    "test_size": 3735,
+    "test_metrics": {
+      "roc_auc": 0.8167,
+      "pr_auc": 0.8167,
+      "accuracy": 0.7328,
+      "precision": 0.7508,
+      "recall": 0.737,
+      "f1": 0.7438,
+      "confusion_matrix": {
+        "true_negative": 1288,
+        "false_positive": 481,
+        "false_negative": 517,
+        "true_positive": 1449
+      },
+      "threshold": 0.5,
+      "sample_count": 3735,
+      "positive_count": 1966,
+      "negative_count": 1769
+    },
+    "feature_importance": {
+      "elevation_m": {
+        "gain": 16.69,
+        "weight": 1206
+      },
+      "slope_deg": {
+        "gain": 32.85,
+        "weight": 588
+      },
+      "latitude": {
+        "gain": 15.25,
+        "weight": 1717
+      },
+      "longitude": {
+        "gain": 15.91,
+        "weight": 1762
+      }
+    }
+  },
+  "trigger_model": {
+    "dataset_path": "data/gsi/ml_trigger_dataset_v1.csv",
+    "model_path": "data/ml/xgboost_trigger_model.json",
+    "dataset_size": 2268,
+    "features": [
+      "elevation_m",
+      "slope_deg",
+      "latitude",
+      "longitude",
+      "precipitation_event_day_mm",
+      "precipitation_prev_24h_mm",
+      "precipitation_prev_3d_mm",
+      "precipitation_prev_7d_mm",
+      "precipitation_prev_30d_mm"
+    ],
+    "train_val_test_split": "70% / 15% / 15% (Temporal Date-Grouped Blocking)",
+    "train_size": 1678,
+    "val_size": 300,
+    "test_size": 290,
+    "test_metrics": {
+      "roc_auc": 0.8713,
+      "pr_auc": 0.864,
+      "accuracy": 0.7966,
+      "precision": 0.7945,
+      "recall": 0.8,
+      "f1": 0.7973,
+      "confusion_matrix": {
+        "true_negative": 115,
+        "false_positive": 30,
+        "false_negative": 29,
+        "true_positive": 116
+      },
+      "threshold": 0.5,
+      "sample_count": 290,
+      "positive_count": 145,
+      "negative_count": 145
+    },
+    "feature_importance": {
+      "elevation_m": {
+        "gain": 11.36,
+        "weight": 274
+      },
+      "slope_deg": {
+        "gain": 16.4,
+        "weight": 176
+      },
+      "latitude": {
+        "gain": 15.71,
+        "weight": 396
+      },
+      "longitude": {
+        "gain": 11.82,
+        "weight": 454
+      },
+      "precipitation_event_day_mm": {
+        "gain": 5.2,
+        "weight": 88
+      },
+      "precipitation_prev_24h_mm": {
+        "gain": 5.33,
+        "weight": 107
+      },
+      "precipitation_prev_3d_mm": {
+        "gain": 7.03,
+        "weight": 139
+      },
+      "precipitation_prev_7d_mm": {
+        "gain": 4.62,
+        "weight": 82
+      },
+      "precipitation_prev_30d_mm": {
+        "gain": 7.17,
+        "weight": 150
+      }
+    }
+  },
+  "leakage_checks": {
+    "spatial_autocorrelation_mitigation": "Spatial block partitioning (0.5 degree grid) ensures test locations are physically separate from training data.",
+    "temporal_leakage_mitigation": "Date-grouped partitioning ensures identical event dates never co-occur across train and test.",
+    "metadata_leakage": "All identifiers, survey metadata, and target-derived fields strictly excluded from feature inputs."
+  },
+  "scientific_interpretation": {
+    "target_semantics": "target=1 represents field-validated GSI landslide presence; target=0 represents spatial background points without recorded GSI landslide events in the available inventory, NOT confirmed stable terrain.",
+    "operational_distinction": "Susceptibility model provides static spatial terrain susceptibility; Trigger model provides dynamic rainfall-threshold triggering risk."
+  },
+  "final_verdict": "XGBOOST TRAINING: PASS"
+}

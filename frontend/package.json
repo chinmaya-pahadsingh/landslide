@@ -1,0 +1,31 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "node src/tests/localization.test.js && node src/tests/offline.test.js && vitest run src/tests/auth.test.jsx && vitest run src/tests/AreaSearch.test.jsx && vitest run src/tests/AreaIntelligencePanel.test.jsx && vitest run src/tests/Alerts.test.jsx && vitest run src/tests/RiskMap.test.jsx && vitest run src/tests/Dashboard.test.jsx && vitest run src/tests/GlobalSearch.test.jsx && vitest run src/tests/riskMapRegressionFix.test.jsx && vitest run src/tests/riskMapHistoricalCurrentModes.test.jsx"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.40.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "jsdom": "^30.0.1",
+    "oxlint": "^1.79.0",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}

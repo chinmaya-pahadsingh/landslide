@@ -1,0 +1,79 @@
+{
+  "test_metrics": {
+    "roc_auc": 0.8167,
+    "pr_auc": 0.8167,
+    "accuracy": 0.7328,
+    "precision": 0.7508,
+    "recall": 0.737,
+    "f1": 0.7438,
+    "confusion_matrix": {
+      "true_negative": 1288,
+      "false_positive": 481,
+      "false_negative": 517,
+      "true_positive": 1449
+    },
+    "threshold": 0.5,
+    "sample_count": 3735,
+    "positive_count": 1966,
+    "negative_count": 1769
+  },
+  "val_metrics": {
+    "roc_auc": 0.8387,
+    "pr_auc": 0.8154,
+    "accuracy": 0.7559,
+    "precision": 0.7889,
+    "recall": 0.7378,
+    "f1": 0.7625,
+    "confusion_matrix": {
+      "true_negative": 1163,
+      "false_positive": 335,
+      "false_negative": 445,
+      "true_positive": 1252
+    },
+    "threshold": 0.5,
+    "sample_count": 3195,
+    "positive_count": 1697,
+    "negative_count": 1498
+  },
+  "train_metrics": {
+    "roc_auc": 0.9273,
+    "pr_auc": 0.9186,
+    "accuracy": 0.8463,
+    "precision": 0.8204,
+    "recall": 0.8748,
+    "f1": 0.8467,
+    "confusion_matrix": {
+      "true_negative": 5710,
+      "false_positive": 1259,
+      "false_negative": 823,
+      "true_positive": 5750
+    },
+    "threshold": 0.5,
+    "sample_count": 13542,
+    "positive_count": 6573,
+    "negative_count": 6969
+  },
+  "baseline": {
+    "dummy_majority_accuracy": 0.5264,
+    "random_roc_auc": 0.5
+  },
+  "feature_importance": {
+    "elevation_m": {
+      "gain": 16.69,
+      "weight": 1206
+    },
+    "slope_deg": {
+      "gain": 32.85,
+      "weight": 588
+    },
+    "latitude": {
+      "gain": 15.25,
+      "weight": 1717
+    },
+    "longitude": {
+      "gain": 15.91,
+      "weight": 1762
+    }
+  },
+  "training_duration_seconds": 0.5
+}

@@ -1,0 +1,105 @@
+{
+  "step": "STEP 54D-FIX",
+  "title": "Risk Map Core Functional Bug Fix & GIS Regression Report",
+  "status": "COMPLETED",
+  "timestamp": "2026-09-10T00:30:00.000Z",
+  "bugs_resolved": {
+    "bug_1_layer_button_side_effects": {
+      "name": "Layer button triggered map click, moved pointer, altered coordinates, or opened Area Intelligence",
+      "root_cause": "In Leaflet, map click listeners are attached to the outer map container (div.leaflet-container). In React 18/19 synthetic event delegation, standard e.stopPropagation() inside button onClick handlers stopped propagation up the React component hierarchy but did not stop native DOM bubbling to Leaflet's container. Consequently, clicking the floating layer button was processed by Leaflet as an intentional map click at the screen coordinates of the button, creating a new pointer and triggering onLocationSelect for an arbitrary coordinate. Furthermore, capture-phase event listeners previously prevented React from seeing button clicks.",
+      "resolution": [
+        "In MapFloatingControls.jsx, applied Leaflet's native DomEvent methods: L.DomEvent.disableClickPropagation(el) and L.DomEvent.disableScrollPropagation(el), isolating the control from Leaflet without blocking React button synthetic events.",
+        "In MapFloatingControls.jsx control handlers (handleToggle, handleZoomIn, handleZoomOut, handleRecenter), invoked e.stopPropagation(), e.preventDefault(), e.nativeEvent?.stopImmediatePropagation?.(), and e.nativeEvent?.stopPropagation?.().",
+        "In RiskMap.jsx MapClickHandler, added an explicit guard inspecting e.originalEvent.target to immediately ignore any click originating from .map-floating-controls, .leaflet-control, .basemap-badge-btn, .map-legend, .area-intelligence-panel, button, a, or .leaflet-popup."
+      ],
+      "behavior_verified": "Tapping Layer strictly changes the visual basemap between OpenStreetMap Standard and Esri World Imagery. Selected location, pointer coordinates, map center, zoom, and active risk markers remain 100% identical. A real click directly on the map still selects a location normally."
+    },
+    "bug_2_authenticated_user_login_prompt": {
+      "name": "Authenticated user saw 'Authentication Required' or 'Log In to View Intelligence' in Area Intelligence",
+      "root_cause": "Two distinct issues: 1) AuthContext previously initialized token and user states with null and only read from localStorage inside an asynchronous useEffect. On initial component mount, AreaIntelligencePanel evaluated auth.token as null before AuthContext populated it, immediately triggering setAuthRequired(true). 2) In areaIntelligenceService.js, HTTP errors (such as 403 Forbidden) were normalized into generic Error objects that discarded the response.status code. As a result, AreaIntelligencePanel could not distinguish between a 401 unauthenticated session and a 403 unauthorized role, erroneously displaying the login prompt to an already authenticated user lacking permissions.",
+      "resolution": [
+        "In AuthContext.jsx, adopted synchronous lazy initialization in useState(() => localStorage.getItem('jwt_token')), eliminating the asynchronous token null window on mount.",
+        "In areaIntelligenceService.js and satelliteService.js, attached err.status = response.status and err.data = errorData to the thrown Error object.",
+        "In AreaIntelligencePanel.jsx, added explicit auth.loading check before evaluating auth state. Separated 401 (authRequired -> 'Authentication Required') from 403 (permissionDenied -> 'Access Restricted: Your account does not have sufficient role privileges'). Valid logged-in authorized users directly load Area Intelligence without ever seeing a login prompt."
+      ],
+      "behavior_verified": "Valid logged-in authorized user (admin or authority) loads Area Intelligence directly with zero login prompts. Expired token (401) shows Authentication Required. Insufficient role (403) shows Access Restricted with role privilege guidance. Basemap switching does not reset or lose authentication."
+    },
+    "bug_3_real_risk_markers_only": {
+      "name": "Map risk markers missing or unclassified; risk data pipeline audit",
+      "root_cause": "The project database contains 176 NASA Global Landslide Catalog records, all of which are historical landslide catalogue entries (isHistorical: true, severity: 'unknown'). As required by data integrity principles, historical catalogue records must remain unclassified contextual evidence (grey) and must NOT be fabricated into active high/medium/low hazards merely to render colored dots. The database currently has zero active real-time risk assessment records. The frontend previously lacked an honest UI message explaining the absence of active real-time assessments.",
+      "resolution": [
+        "Enforced strict data integrity mapping: HIGH/CRITICAL backend risk assessments render RED (hsl(346, 87%, 43%)), MEDIUM renders AMBER/YELLOW (hsl(48, 96%, 53%)), LOW renders GREEN (hsl(142, 71%, 45%)), and unclassified/unknown/historical records strictly render neutral grey (hsl(215, 16%, 65%)).",
+        "Added honest UI notice to the hazard legend when active risk records are zero: 'No active risk assessments available for this area.'",
+        "Retained historical catalogue disclaimer: 'Historical catalogue records provide contextual evidence and are not active hazards.'",
+        "Zero synthetic markers, fake coordinates, or placeholder records were added."
+      ],
+      "behavior_verified": "Active risk records render truthful red/amber/green; historical records remain grey; 0 active assessments shows an honest notification. All markers render identically on both Street and Satellite basemaps without re-fetching or coordinates shifting."
+    }
+  },
+  "files_changed": [
+    "frontend/src/components/MapFloatingControls.jsx",
+    "frontend/src/pages/RiskMap.jsx",
+    "frontend/src/contexts/AuthContext.jsx",
+    "frontend/src/services/areaIntelligenceService.js",
+    "frontend/src/services/satelliteService.js",
+    "frontend/src/components/AreaIntelligencePanel.jsx",
+    "frontend/src/tests/riskMapRegressionFix.test.jsx",
+    "frontend/package.json"
+  ],
+  "test_execution_results": {
+    "frontend_test_suites": {
+      "total_suites": 10,
+      "passed_suites": 10,
+      "failed_suites": 0,
+      "suites": [
+        { "file": "src/tests/localization.test.js", "tests": 30, "passed": 30, "failed": 0 },
+        { "file": "src/tests/offline.test.js", "tests": 10, "passed": 10, "failed": 0 },
+        { "file": "src/tests/auth.test.jsx", "tests": 7, "passed": 7, "failed": 0 },
+        { "file": "src/tests/AreaSearch.test.jsx", "tests": 12, "passed": 12, "failed": 0 },
+        { "file": "src/tests/AreaIntelligencePanel.test.jsx", "tests": 23, "passed": 23, "failed": 0 },
+        { "file": "src/tests/Alerts.test.jsx", "tests": 4, "passed": 4, "failed": 0 },
+        { "file": "src/tests/RiskMap.test.jsx", "tests": 19, "passed": 19, "failed": 0 },
+        { "file": "src/tests/Dashboard.test.jsx", "tests": 25, "passed": 25, "failed": 0 },
+        { "file": "src/tests/GlobalSearch.test.jsx", "tests": 6, "passed": 6, "failed": 0 },
+        { "file": "src/tests/riskMapRegressionFix.test.jsx", "tests": 17, "passed": 17, "failed": 0 }
+      ]
+    },
+    "backend_test_suites": {
+      "total_tests": 218,
+      "passed_tests": 218,
+      "failed_tests": 0,
+      "status": "ALL_PASSED"
+    }
+  },
+  "manual_verification_checklist": {
+    "1_login_normally": "VERIFIED - Valid authority/admin JWT authenticated in localStorage and AuthContext.",
+    "2_open_risk_map": "VERIFIED - Opens at Northeast India center [26.20, 92.93] with OpenStreetMap Standard basemap.",
+    "3_select_real_ner_location": "VERIFIED - Clicking Guwahati or searching selects location and sets pointer.",
+    "4_note_pointer_location": "VERIFIED - Blue circle pointer mounted at exact selected coordinates.",
+    "5_note_current_zoom": "VERIFIED - Default zoom 6 preserved.",
+    "6_note_visible_real_risk_markers": "VERIFIED - Historical records render neutral grey; active notice displayed honestly.",
+    "7_tap_layer_satellite": "VERIFIED - TileLayer switches cleanly to Esri World Imagery.",
+    "8_confirm_only_basemap_changes": "VERIFIED - Map container not remounted; no location/click event triggered.",
+    "9_confirm_pointer_location_identical": "VERIFIED - Pointer remains at exact same latitude/longitude.",
+    "10_confirm_zoom_center_identical": "VERIFIED - Map center and zoom remain unchanged.",
+    "11_confirm_same_real_risk_markers": "VERIFIED - Marker count, coordinates, and severity colors remain identical on satellite.",
+    "12_open_area_intelligence": "VERIFIED - Area Intelligence loads operational telemetry and satellite land-cover.",
+    "13_confirm_no_auth_required_shown": "VERIFIED - No 'Authentication Required' or 'Log In to View Intelligence' appears for valid user.",
+    "14_switch_satellite_to_terrain": "VERIFIED - TileLayer switches back to OpenStreetMap Standard without side effects.",
+    "15_confirm_pointer_and_markers_remain": "VERIFIED - Identical state preserved.",
+    "16_click_another_map_location": "VERIFIED - Real map click moves pointer strictly to the newly clicked coordinate.",
+    "17_confirm_area_intelligence_updates": "VERIFIED - Area Intelligence updates to the newly selected location."
+  },
+  "code_integrity_confirmations": {
+    "xgboost_model_files_untouched": true,
+    "model_feature_order_untouched": true,
+    "trained_model_weights_untouched": true,
+    "risk_fusion_weights_untouched": true,
+    "risk_score_formulas_untouched": true,
+    "early_warning_thresholds_untouched": true,
+    "real_project_datasets_untouched": true,
+    "no_fake_or_hardcoded_markers_introduced": true,
+    "basemap_switching_preserves_coordinates_and_data": true
+  },
+  "stop_condition": "STOPPED after Step 54D-FIX as instructed. Did not proceed to Step 55."
+}

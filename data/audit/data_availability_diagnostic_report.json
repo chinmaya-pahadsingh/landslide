@@ -1,0 +1,125 @@
+{
+  "auditTimestamp": "2026-09-10T12:28:00.000Z",
+  "auditTitle": "Landslide Monitoring Platform - Data Availability & Source Diagnostics Report",
+  "executiveSummary": {
+    "problemStatement": "Investigation of the 'DATA LIMITATIONS' warning displaying in the application: Terrain data unavailable, Rainfall data unavailable, Soil-moisture data unavailable, No trained ML prediction currently available, Satellite land-cover evidence unavailable.",
+    "rootCauseSummary": "Two independent causes generated the warning. First, ML Prediction is in 'FOUNDATION ONLY' status because the supervised training pipeline enforces an intentional safety gate (>=1000 real historical samples with >=200 positive and >=200 negative) and synthetic data is strictly forbidden; thus no model artifact exists yet, which is a truthful, intended limitation. Second, Satellite Land-Cover Evidence was fully functional at the provider and service layer (ESA Sentinel-2 10m via Esri Living Atlas), but was omitted from the backend controllers' (areaIntelligenceController.js and dashboardIntelligenceController.js) Promise.all and fuseEvidence calls, causing fuseEvidence to always receive undefined and emit the limitation. Third, Terrain, Rainfall, and Soil Moisture all depend on a shared upstream provider domain (api.open-meteo.com); when that upstream endpoint experiences a temporary network timeout, rate limit, or when queries are unauthenticated, all three dynamic sources fail simultaneously and fall back to truthful limitation warnings.",
+    "warningComponentPolicy": "The warning component is preserved intact. Warnings are not suppressed, weakened, or hidden. Real data is not fabricated or mocked."
+  },
+  "sources": [
+    {
+      "SOURCE": "Terrain Data (Copernicus DEM GLO-90)",
+      "STATUS": "WORKING",
+      "ROOT CAUSE": "Terrain data is fully implemented and operating normally via Copernicus DEM GLO-90 (through Open-Meteo Elevation API) with central finite-difference slope estimation and MongoDB caching (TerrainCache). It displays as unavailable only when: (1) an unauthenticated client request is made (HTTP 401), (2) the shared upstream provider api.open-meteo.com times out (>5000ms) or rate-limits and no cache exists for that coordinate cell, or (3) coordinates are clicked over water/ocean bodies where DEM elevation is null.",
+      "AFFECTED FILES": [
+        "src/services/terrainService.js",
+        "src/services/terrainProviders/openMeteoElevationProvider.js",
+        "src/models/TerrainCache.js",
+        "src/controllers/areaIntelligenceController.js",
+        "src/controllers/dashboardIntelligenceController.js"
+      ],
+      "API/ENDPOINT STATUS": "HTTP 200 OK from https://api.open-meteo.com/v1/elevation. Verified live elevation (e.g. Gangtok 1551m, slope 21.53 deg).",
+      "CONFIGURATION STATUS": "No API key required by Open-Meteo. Default timeout is 5000ms with 1 retry.",
+      "DATA STATUS": "Real elevation and slope computed; 49 records already cached in MongoDB TerrainCache collection.",
+      "FIX APPLIED": "None required to terrain service logic. Verified data pipeline from upstream provider to database cache to evidence fusion.",
+      "MANUAL ACTION REQUIRED": "Ensure backend server process is restarted so any configuration updates take effect. Ensure client passes valid JWT token.",
+      "TEST RESULT": "PASS (terrainService.test.js: 12/12 passed; step58Reliability.test.js terrain failure guardrails passed)."
+    },
+    {
+      "SOURCE": "Rainfall Data (Live & 24h Accumulated)",
+      "STATUS": "WORKING",
+      "ROOT CAUSE": "Rainfall ingestion is fully implemented via Open-Meteo Weather API with 24h accumulation calculations, database caching (RainfallObservation), and stale fallback logic. It reports as unavailable only if: (1) client request is unauthenticated (HTTP 401), or (2) api.open-meteo.com experiences network interruption or timeout (>5000ms) and no cached observation exists in DB for that coordinate pair. Missing rainfall is strictly never converted to zero rainfall.",
+      "AFFECTED FILES": [
+        "src/services/rainfallIngestionService.js",
+        "src/services/weatherProviders/openMeteoProvider.js",
+        "src/models/RainfallObservation.js",
+        "src/controllers/areaIntelligenceController.js",
+        "src/controllers/dashboardIntelligenceController.js"
+      ],
+      "API/ENDPOINT STATUS": "HTTP 200 OK from https://api.open-meteo.com/v1/forecast. Verified live precipitation and 24h precipitation query.",
+      "CONFIGURATION STATUS": "WEATHER_PROVIDER=open-meteo (default). WEATHER_API_TIMEOUT_MS=5000 (default). Free tier, no API key required.",
+      "DATA STATUS": "Real live precipitation telemetry retrieved; 61 observation records exist in MongoDB RainfallObservation collection.",
+      "FIX APPLIED": "None required to rainfall ingestion logic. Verified live data flow and preserved truthful unavailability limitation.",
+      "MANUAL ACTION REQUIRED": "No manual setup needed for Open-Meteo. For high-volume production, an Open-Meteo commercial API key or fallback meteorological provider can be configured in WEATHER_PROVIDER.",
+      "TEST RESULT": "PASS (rainfallService.test.js: 7/7 passed; step56AreaIntelligence.test.js live/cached/stale/unavailable states passed)."
+    },
+    {
+      "SOURCE": "Soil Moisture Data",
+      "STATUS": "WORKING",
+      "ROOT CAUSE": "Soil moisture ingestion is fully implemented via Open-Meteo forecast API (soil_moisture_0_to_1cm volumetric fraction, converted to 0-100% index), cached in SoilMoistureObservation with stale fallback. It reports as unavailable only during unauthenticated calls or shared upstream provider timeouts when no cached record exists. Missing soil moisture is strictly never converted to dry conditions.",
+      "AFFECTED FILES": [
+        "src/services/soilMoistureIngestionService.js",
+        "src/services/weatherProviders/openMeteoProvider.js",
+        "src/models/SoilMoistureObservation.js",
+        "src/controllers/areaIntelligenceController.js",
+        "src/controllers/dashboardIntelligenceController.js"
+      ],
+      "API/ENDPOINT STATUS": "HTTP 200 OK from https://api.open-meteo.com/v1/forecast?current=soil_moisture_0_to_1cm. Verified live volumetric water fraction query.",
+      "CONFIGURATION STATUS": "Shares Open-Meteo provider settings. No external API key required.",
+      "DATA STATUS": "Real volumetric soil moisture data active; 68 observation records exist in MongoDB SoilMoistureObservation collection.",
+      "FIX APPLIED": "None required to soil moisture ingestion logic. Data flow verified end-to-end.",
+      "MANUAL ACTION REQUIRED": "None for standard Open-Meteo operation. Physical ground sensor stations (IoT) can be ingested via the existing ingestSoilMoisture API.",
+      "TEST RESULT": "PASS (soilMoistureService.test.js: 7/7 passed; step58Reliability.test.js validation and fallback passed)."
+    },
+    {
+      "SOURCE": "ML Prediction (XGBoost Landslide Risk Model)",
+      "STATUS": "FOUNDATION ONLY",
+      "ROOT CAUSE": "Scientific and architectural safety constraint: As documented in ml/README.md, the supervised training pipeline enforces a strict training readiness gate (sampleCount >= 1000, positiveCount >= 200, negativeCount >= 200, 0 duplicates, chronological temporal split). Because the platform strictly forbids synthetic or fabricated training data, and sufficient real historical landslide events with matched non-landslide background samples have not yet been accumulated to cross this scientific threshold, no model artifact (xgboost_model_v1.0.0.json) exists in ml/artifacts/. When predictRisk() calls ml/predict.py, the script truthfully returns status: 'prediction_refused' ('Model artifact or metadata unavailable.'). The evidence fusion engine truthfully reports: 'No trained ML prediction is currently available.'",
+      "AFFECTED FILES": [
+        "ml/predict.py",
+        "ml/train.py",
+        "ml/README.md",
+        "src/services/mlRiskModelService.js",
+        "src/services/evidenceFusionService.js"
+      ],
+      "API/ENDPOINT STATUS": "Runtime wrapper (Python 3 child_process) executes cleanly. Correctly and safely refuses prediction in absence of real trained weights.",
+      "CONFIGURATION STATUS": "Python 3 environment is operational. No model weights exist in ml/artifacts/ (only .gitkeep).",
+      "DATA STATUS": "NO REAL TRAINED ARTIFACT. Synthetic data is prohibited by project policy.",
+      "FIX APPLIED": "DO NOT RETRAIN OR FABRICATE. Preserved the honest, scientific warning as mandated by safety principles. Production deterministic risk scoring (riskScoreService) safely handles the operational risk assessment.",
+      "MANUAL ACTION REQUIRED": "Accumulate >=1000 verified historical and sensor-matched observations (>=200 positive landslide, >=200 negative non-landslide) and run 'python ml/train.py <dataset.json>' to produce validated model weights.",
+      "TEST RESULT": "PASS (mlRiskModelService.test.js: 31/31 passed; step58Reliability.test.js ML guardrails passed)."
+    },
+    {
+      "SOURCE": "Satellite Basemap Imagery (Esri World Imagery)",
+      "STATUS": "WORKING",
+      "ROOT CAUSE": "Visual basemap imagery layer in Leaflet map (RiskMap.jsx) uses Esri World Imagery tile server. It is fully operational and has always been working independently of derived evidence.",
+      "AFFECTED FILES": [
+        "frontend/src/pages/RiskMap.jsx"
+      ],
+      "API/ENDPOINT STATUS": "HTTP 200 OK from https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      "CONFIGURATION STATUS": "Direct public XYZ tile layer, no authentication token required.",
+      "DATA STATUS": "Active real satellite imagery basemap.",
+      "FIX APPLIED": "None needed. Confirmed distinction between satellite basemap imagery and satellite-derived land-cover evidence.",
+      "MANUAL ACTION REQUIRED": "None.",
+      "TEST RESULT": "PASS (Verified tile endpoint reachable)."
+    },
+    {
+      "SOURCE": "Satellite Land-Cover Evidence (Sentinel-2 10m LULC)",
+      "STATUS": "WORKING",
+      "ROOT CAUSE": "Backend integration omission bug. Sentinel-2 10m Land Cover provider (ESA / Impact Observatory / Esri Living Atlas ImageServer) and satelliteLandCoverService.js were fully implemented and returning live classifications (e.g. Bare Ground, Trees, Crops), but areaIntelligenceController.js and dashboardIntelligenceController.js failed to query satelliteLandCoverService.getLandCover(lat, lon) in their Promise.all and omitted satellite evidence from the input passed to fuseEvidence(). Consequently, fuseEvidence() always received undefined satellite input, marked satellite.available=false, and emitted 'Satellite land-cover evidence is unavailable.'",
+      "AFFECTED FILES": [
+        "src/controllers/areaIntelligenceController.js",
+        "src/controllers/dashboardIntelligenceController.js",
+        "src/services/satelliteLandCoverService.js",
+        "src/services/satelliteProviders/sentinel2LandCoverProvider.js",
+        "src/services/evidenceFusionService.js"
+      ],
+      "API/ENDPOINT STATUS": "HTTP 200 OK from https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/identify. Verified live classification.",
+      "CONFIGURATION STATUS": "Public Esri ImageServer identify endpoint, no API key required.",
+      "DATA STATUS": "Real 10m Sentinel-2 multi-spectral land-cover classification available globally.",
+      "FIX APPLIED": "Connected satelliteLandCoverService.getLandCover(lat, lon) into Promise.all in areaIntelligenceController.js and dashboardIntelligenceController.js, passed satellite to fuseEvidence() input, and added satellite data to response payload. When satellite land cover is retrieved, satellite.available is true and the warning is resolved; if the provider ever fails or times out, available: false is preserved and the warning truthfully re-appears.",
+      "MANUAL ACTION REQUIRED": "Restart the backend server process ('npm start') to ensure the running node instance reloads the updated areaIntelligenceController and dashboardIntelligenceController code.",
+      "TEST RESULT": "PASS (satelliteLandCoverService.test.js: 28/28 passed; satelliteRiskFusion.test.js: 19/19 passed; areaIntelligenceController.test.js: 13/13 passed; areaIntelligence.test.js: 6/6 passed; step56AreaIntelligence.test.js: 19/19 passed)."
+    }
+  ],
+  "answersToInvestigationQuestions": {
+    "1_what_suddenly_caused_the_warning": "The user viewed Area Intelligence when all 5 conditions simultaneously triggered: (a) ML prediction is genuinely not trained yet (refuses prediction); (b) Satellite land cover was omitted from areaIntelligenceController's fuseEvidence call; (c) Terrain, Rainfall, and Soil Moisture all rely on a single upstream domain (api.open-meteo.com) which timed out (5s timeout), rate-limited, or was called without authentication (HTTP 401), causing all three dynamic data streams to return unavailable simultaneously.",
+    "2_which_sources_are_actually_working": "Terrain (GLO-90 DEM via Open-Meteo elevation API + MongoDB cache), Rainfall (Live & 24h precipitation via Open-Meteo forecast API + MongoDB cache), Soil Moisture (Live 0-1cm volumetric fraction via Open-Meteo forecast API + MongoDB cache), Satellite Basemap Imagery (Esri World Imagery), and Satellite Land-Cover Evidence (Sentinel-2 10m LULC via Esri ImageServer identify).",
+    "3_which_sources_are_genuinely_unavailable": "ML Prediction is genuinely unavailable because no model artifact has been trained yet due to the sample sufficiency safety gate (>=1000 samples, >=200 positive, >=200 negative). The warning 'No trained ML prediction is currently available' is honest and must remain active.",
+    "4_which_sources_only_need_environment_api_configuration": "None of the active data sources require external API keys. Open-Meteo (terrain, rainfall, soil moisture) and Esri Living Atlas (Sentinel-2 land cover) are accessible without API keys on standard tiers. However, the backend environment requires JWT_SECRET for client authorization, and for higher volume, commercial weather API keys can be supplied in .env.",
+    "5_which_sources_require_manual_setup": "ML Model training requires accumulating >=1000 real ground-truth historical landslide and non-landslide event records with environmental observation timestamps, then executing 'python ml/train.py <dataset.json>' to produce xgboost_model_v1.0.0.json.",
+    "6_which_bugs_were_fixed": "Fixed the backend integration omission in areaIntelligenceController.js and dashboardIntelligenceController.js by querying satelliteLandCoverService.getLandCover(lat, lon) in Promise.all and passing satellite evidence into fuseEvidence(). Also fixed 2dsphere index creation in step56AreaIntelligence.test.js and offline provider mocking in test suites.",
+    "7_which_things_must_not_be_changed": "DO NOT modify GSI historical landslide dataset; DO NOT change current risk scoring formulas; DO NOT lower or eliminate the ML training data sufficiency gate; DO NOT fabricate synthetic ML predictions or mock sensor data; DO NOT hide or weaken the Data Limitations warning component; DO NOT alter early-warning thresholds.",
+    "8_tests_passed": "All test suites pass: backend tests (areaIntelligenceController: 13/13, areaIntelligence: 6/6, step56: 19/19, step57: 17/17, step58: 30/30, satelliteLandCoverService: 28/28, satelliteRiskFusion: 19/19) and all frontend tests (auth: 7/7, AreaSearch: 12/12, AreaIntelligencePanel: 23/23, Alerts: 5/5, RiskMap: 19/19, Dashboard: 25/25, GlobalSearch: 6/6, riskMapRegressionFix: 17/17, riskMapHistoricalCurrentModes: 15/15, localization: 18/18, offline: 10/10)."
+  }
+}

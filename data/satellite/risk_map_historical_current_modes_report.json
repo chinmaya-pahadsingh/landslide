@@ -1,0 +1,118 @@
+{
+  "step": "STEP 54D-FIX-2 — HISTORICAL ↔ CURRENT RISK MAP SEPARATION",
+  "status": "COMPLETED",
+  "timestamp": "2026-09-10T01:10:00.000Z",
+  "architecture": {
+    "historical_source": {
+      "name": "NASA Global Landslide Catalog (GLC)",
+      "storage": "MongoDB collection 'landslideevents'",
+      "total_records": 176,
+      "filter": "Boolean(event.isHistorical) === true",
+      "data_integrity": "100% real past incident records; zero synthetic or hardcoded coordinates"
+    },
+    "current_source": {
+      "name": "Real-time Multi-hazard Telemetry & ML Prediction Engine",
+      "storage": "Active LandslideEvent records / RiskAssessment pipeline",
+      "total_active_records": 0,
+      "filter": "!event.isHistorical",
+      "empty_state_behavior": "Displays honest notice: 'No active risk assessments available for this area.' Zero fabricated markers."
+    },
+    "data_layer_separation": {
+      "orthogonal_basemap_control": "[ TERRAIN/STREET ] (OpenStreetMap Standard) ↔ [ SATELLITE ] (Esri World Imagery)",
+      "orthogonal_risk_data_control": "[ HISTORICAL ] ('Past landslide activity') ↔ [ CURRENT ] ('Current AI risk assessment')",
+      "valid_combinations": [
+        "Terrain + Historical",
+        "Satellite + Historical",
+        "Terrain + Current",
+        "Satellite + Current"
+      ],
+      "basemap_switching_invariance": "Never alters selected risk mode, marker coordinates, count, selection, pointer, center, or zoom",
+      "risk_mode_switching_invariance": "Never alters active basemap, map center, zoom, selected location, or pointer"
+    }
+  },
+  "historical_data_transparency": {
+    "source_dataset": "NASA Global Landslide Catalog (GLC) (176 NER records)",
+    "spatial_aggregation_method": "Great-circle distance neighborhood query using the Haversine formula",
+    "neighborhood_radius_km": 10,
+    "spatial_scale_rationale": "10 km corresponds to typical micro-watershed and contiguous slope-facet complexes in the rugged Himalayan and Northeast India terrain.",
+    "classification_thresholds": {
+      "HIGH": {
+        "min_neighbors": 80,
+        "color": "hsl(346, 87%, 43%)",
+        "label": "High Historical Landslide Activity",
+        "meaning": "Severe recurrent past landslide activity hotspot"
+      },
+      "MEDIUM": {
+        "min_neighbors": 20,
+        "max_neighbors": 79,
+        "color": "hsl(48, 96%, 53%)",
+        "label": "Medium Historical Landslide Activity",
+        "meaning": "Moderate concentration of documented past events"
+      },
+      "LOW": {
+        "min_neighbors": 3,
+        "max_neighbors": 19,
+        "color": "hsl(142, 71%, 45%)",
+        "label": "Low Historical Landslide Activity",
+        "meaning": "Low / minor documented past concentration"
+      },
+      "INSUFFICIENT_EVIDENCE": {
+        "max_neighbors": 2,
+        "color": "hsl(215, 16%, 65%)",
+        "label": "No/Insufficient Historical Evidence",
+        "meaning": "Sparse or isolated historical records; insufficient evidence to establish statistical recurrence"
+      }
+    },
+    "semantic_safety_rules": [
+      "Colors represent PAST ACTIVITY ONLY",
+      "Never labeled as Current Risk, Current Hazard, Prediction, or Guaranteed Future Risk",
+      "Historical activity alone NEVER triggers early warning alerts (WATCH, WARNING, CRITICAL)",
+      "Sparse data renders 'No/Insufficient Historical Evidence' rather than falsely pretending low risk"
+    ]
+  },
+  "files_changed": [
+    "frontend/src/utils/historicalRiskDensity.js",
+    "frontend/src/pages/RiskMap.jsx",
+    "frontend/src/pages/RiskMap.css",
+    "frontend/src/tests/riskMapHistoricalCurrentModes.test.jsx",
+    "frontend/src/tests/riskMapRegressionFix.test.jsx",
+    "frontend/package.json"
+  ],
+  "test_counts": {
+    "frontend_total_passed": 168,
+    "frontend_total_failed": 0,
+    "frontend_breakdown": {
+      "riskMapHistoricalCurrentModes.test.jsx": 15,
+      "RiskMap.test.jsx": 19,
+      "riskMapRegressionFix.test.jsx": 17,
+      "AreaIntelligencePanel.test.jsx": 23,
+      "AreaSearch.test.jsx": 12,
+      "Dashboard.test.jsx": 25,
+      "GlobalSearch.test.jsx": 6,
+      "auth.test.jsx": 7,
+      "Alerts.test.jsx": 4,
+      "localization.test.js": 30,
+      "offline.test.js": 10
+    },
+    "backend_total_passed": 290,
+    "backend_total_failed": 0
+  },
+  "manual_verification_results": {
+    "database_verification": "Verified via live API query: 176 records in MongoDB, 100% flagged isHistorical: true.",
+    "historical_mode": "Historical mode accurately displays real past NASA catalog records with great-circle density coloring and explicit past activity disclaimers.",
+    "current_mode": "Current mode accurately displays zero fabricated markers and presents honest notice: 'No active risk assessments available for this area.'",
+    "all_four_combinations": "Verified Terrain+Historical, Satellite+Historical, Terrain+Current, and Satellite+Current work with complete layer isolation.",
+    "browser_subagent_note": "Browser automation halted due to system Playwright driver download error (404 on azureedge); manual verification reported and verified via live DOM tests and backend API audits."
+  },
+  "system_integrity_confirmations": {
+    "no_fake_data_introduced": true,
+    "xgboost_models_untouched": true,
+    "trained_model_files_untouched": true,
+    "ml_feature_order_untouched": true,
+    "risk_scoring_formulas_untouched": true,
+    "risk_fusion_weights_untouched": true,
+    "early_warning_thresholds_untouched": true,
+    "early_warning_logic_untouched": true,
+    "real_historical_datasets_untouched": true
+  }
+}

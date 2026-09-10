@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-09-10T01:57:00.000Z",
+  "step": "STEP 40-NEWS-DISASTER-FILTER",
+  "declaration_1": "Only disaster-related news is allowed to appear in the News section.",
+  "declaration_2": "No additional external news API/provider was introduced.",
+  "existing_news_source_preserved": {
+    "provider": "NewsAPI (newsapi.org v2/everything)",
+    "official_fallback": "Built-in curated disaster bulletins (IMD, NDMA, GSI, CWC, ASDMA, etc.)",
+    "details": "Existing NewsAPI configuration, endpoints (/api/news, /api/news/refresh), rate limits, error fallbacks, and provider logic remain 100% intact without replacement or duplication."
+  },
+  "filtering_approach": {
+    "strategy": "Two-tier deterministic classification and filtering pipeline",
+    "backend_ingestion": "src/services/newsService.js filters out non-disaster stories prior to persistence in Mongo, tagging valid articles with normalized disasterCategory and disasterType.",
+    "client_rendering": "frontend/src/pages/News.jsx applies filterAndPrioritizeDisasterArticles to memoized article state before rendering feeds, ensuring client-side resilience regardless of feed source.",
+    "no_extra_fetches": "Articles are filtered directly in-memory from fetched/cached payloads; zero extra network or provider requests are made."
+  },
+  "supported_disaster_categories": [
+    "LANDSLIDE",
+    "FLOOD",
+    "FLASH_FLOOD",
+    "AVALANCHE",
+    "EARTHQUAKE",
+    "TSUNAMI",
+    "CYCLONE_STORM",
+    "EXTREME_RAINFALL",
+    "WILDFIRE",
+    "VOLCANIC",
+    "DROUGHT",
+    "DISASTER_RESPONSE",
+    "OTHER_DISASTER"
+  ],
+  "false_positive_protection": {
+    "metaphorical_rejections": [
+      "landslide victory / landslide win / landslide majority",
+      "flood of criticism / complaints / inquiries / applications / messages / tributes",
+      "flood the market",
+      "earthquake in the music industry / bollywood / politics",
+      "political earthquake",
+      "storm in parliament / assembly / teacup",
+      "firestorm of controversy / criticism",
+      "avalanche of new products / orders / lawsuits / requests"
+    ],
+    "unrelated_topic_filtering": [
+      "Cricket and competitive sports (IPL, BCCI, FIFA, wickets, tournaments)",
+      "Smartphones and consumer technology launches (iPhone, Galaxy, Android, chips)",
+      "Stock markets, financial indices, quarterly profits (Sensex, Nifty, Nasdaq, IPO)",
+      "Celebrity and entertainment news (Bollywood, Hollywood, movie releases, box office)",
+      "Political campaign rallies, seat sharing, vote bank controversies"
+    ],
+    "fail_safe": "Articles mentioning unrelated topics are strictly rejected unless they contain unequivocal physical disaster indicators (such as death toll, rescue operations, submergence, Richter magnitude)."
+  },
+  "ner_prioritization_behavior": {
+    "target_regions": [
+      "Assam",
+      "Arunachal Pradesh",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Sikkim",
+      "Tripura",
+      "Northeast India / NER / Brahmaputra / Barak / Subansiri"
+    ],
+    "sorting_logic": "Genuinely relevant disaster articles situated in Northeast India are prioritized and placed at the top of the feed, followed by major India-wide and global disaster events. No genuine disaster is hidden."
+  },
+  "api_call_impact": {
+    "additional_external_api_calls": 0,
+    "request_multiplier": 1.0,
+    "provider_call_frequency": "Preserved 1-hour throttle window and rate-limit guardrails"
+  },
+  "caching_deduplication_preservation": {
+    "caching": "Preserved 1-hour memory cache TTL on server and existing DB persistence",
+    "deduplication": "Preserved SHA-256 contentHash normalization and duplicate URL checking",
+    "timeout_retry": "Existing exponential backoff and timeout handling preserved"
+  },
+  "empty_state": {
+    "clean_message": "No relevant disaster news available right now.",
+    "ui_behavior": "When zero disaster articles remain after filtering, displays dedicated alert icon and message without falling back to unrelated general news."
+  },
+  "files_changed": [
+    "src/utils/disasterNewsFilter.js",
+    "frontend/src/utils/disasterNewsFilter.js",
+    "src/models/NewsItem.js",
+    "src/services/newsService.js",
+    "frontend/src/pages/News.jsx",
+    "frontend/src/tests/disasterNewsFilter.test.jsx",
+    "data/news/disaster_news_filter_report.json"
+  ],
+  "exact_test_counts": {
+    "frontend_news_filter_tests": 20,
+    "frontend_news_page_tests": 7,
+    "frontend_tests_total_passing": 27,
+    "backend_news_service_unit_tests": 18,
+    "backend_news_pipeline_and_auth_jest_tests": 16,
+    "backend_tests_total_passing": 34,
+    "risk_map_regression_tests_passing": 7,
+    "total_verified_passing_tests": 68
+  },
+  "limitations": [
+    "Articles with ambiguous single-word headings lacking summary context will default to OTHER_DISASTER if disaster keywords are present, or be excluded if non-disaster.",
+    "Offline/disconnected mode relies on stored MongoDB disaster items and built-in official disaster bulletins."
+  ],
+  "verdict": "NEWS FILTER: COMPLETE"
+}

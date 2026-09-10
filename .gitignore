@@ -1,0 +1,21 @@
+.env
+node_modules/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+coverage/
+
+temp_audit_data.json
+prompt_output.txt
+payload.json
+scratch/
+
+data/gsi/landslide_report.pdf
+data/nrsc/Landslides_Atlas_of_India_Updated_25Aug2023 (1).pdf
+data/dem/copernicus_glo30/Copernicus_DSM_COG_10_N23_00_E091_00_DEM.tif
+
+data/gsi/
+data/nrsc/
+data/dem/

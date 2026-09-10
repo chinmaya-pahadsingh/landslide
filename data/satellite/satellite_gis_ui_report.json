@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-09-09T23:55:00.000Z",
+  "step": "STEP 54D — SATELLITE GIS/UI VISUALIZATION",
+  "satellite_basemap": {
+    "provider": "Esri World Imagery (ArcGIS Online)",
+    "tile_url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    "attribution": "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+    "subdomains": ["server", "services"],
+    "max_zoom": 19,
+    "toggle_interaction": {
+      "osm_retained": true,
+      "user_switchable": true,
+      "overlays_preserved": true,
+      "hud_and_popups_preserved": true,
+      "non_blocking": true
+    }
+  },
+  "analytical_satellite_integration": {
+    "endpoint": "GET /api/satellite/land-cover?lat=<lat>&lon=<lon>",
+    "client_service": "frontend/src/services/satelliteService.js",
+    "auth_pattern": "Standard Bearer JWT via Authorization header from localStorage ('jwt_token')",
+    "separation_of_concerns": "Strict separation between visual satellite basemap tiles (visual inspection/context) and analytical backend satellite land-cover evidence (quantified categorical surface evidence and risk contribution points)."
+  },
+  "frontend_components_changed": [
+    {
+      "file": "frontend/src/services/satelliteService.js",
+      "action": "NEW",
+      "description": "Exposes authenticated API client for GET /api/satellite/land-cover with AbortSignal cancellation support."
+    },
+    {
+      "file": "frontend/src/components/AreaIntelligencePanel.jsx",
+      "action": "MODIFIED",
+      "description": "Added compact Satellite Evidence card rendering source, land-cover class, category, risk context, and contribution points when available; renders strict 'Satellite evidence unavailable' state when missing/errored."
+    },
+    {
+      "file": "frontend/src/pages/RiskMap.jsx",
+      "action": "MODIFIED",
+      "description": "Configured BASEMAPS with OpenStreetMap Standard and Esri World Imagery; exposed toggle button in header and wired active basemap to MapFloatingControls and TileLayer."
+    },
+    {
+      "file": "frontend/src/components/MapFloatingControls.jsx",
+      "action": "MODIFIED",
+      "description": "Connected layer toggle button with dynamic active state highlighting and accessible descriptive tooltips."
+    },
+    {
+      "file": "frontend/src/components/MapFloatingControls.css",
+      "action": "MODIFIED",
+      "description": "Added active state glow and styling for active satellite basemap button."
+    },
+    {
+      "file": "frontend/src/tests/RiskMap.test.jsx",
+      "action": "MODIFIED",
+      "description": "Updated layer button toggle tests and added satellite basemap switching test ensuring markers and overlays remain intact."
+    },
+    {
+      "file": "frontend/src/tests/AreaIntelligencePanel.test.jsx",
+      "action": "MODIFIED",
+      "description": "Added comprehensive test suite covering available, unavailable, unknown, loading, and error states for Satellite Evidence."
+    }
+  ],
+  "ui_behavior": {
+    "available_state": {
+      "display_fields": [
+        "Satellite source (e.g. Sentinel-2 10m Land Cover)",
+        "Land-cover class (e.g. Bare Ground / Tree Cover)",
+        "Normalized category (bare / vegetation / cropland / built_up / water)",
+        "Contextual risk interpretation (e.g. Increased surface vulnerability)",
+        "Contribution points (e.g. +5 points / -3 points)"
+      ]
+    },
+    "unavailable_state": {
+      "message": "Satellite evidence unavailable",
+      "safety_constraints": [
+        "Never displays fake 'vegetation'",
+        "Never displays 0 as a fake value",
+        "Never displays fake 'safe' status",
+        "Never displays fabricated class or category"
+      ]
+    },
+    "loading_state": {
+      "message": "Querying satellite observations...",
+      "non_blocking": true
+    },
+    "error_and_timeout_state": {
+      "behavior": "Safely isolated in Promise catch block; falls back to 'Satellite evidence unavailable' without breaking primary environmental intelligence or map controls."
+    }
+  },
+  "tests_summary": {
+    "frontend_test_suites": [
+      {
+        "suite": "src/tests/RiskMap.test.jsx",
+        "passed": 19,
+        "failed": 0,
+        "features_verified": [
+          "Satellite basemap toggle renders",
+          "OSM remains selectable",
+          "Switching to satellite basemap preserves CircleMarkers, popups, and HUD overlays",
+          "CartoDB Voyager is never exposed or requested"
+        ]
+      },
+      {
+        "suite": "src/tests/AreaIntelligencePanel.test.jsx",
+        "passed": 23,
+        "failed": 0,
+        "features_verified": [
+          "Satellite evidence card renders available data (source, class, category, context, contribution)",
+          "Vegetative satellite evidence renders stabilizing context and negative contribution",
+          "Provider failure renders 'Satellite evidence unavailable'",
+          "Unknown category renders 'Satellite evidence unavailable' without fake values",
+          "Loading state displays 'Querying satellite observations...' non-blockingly",
+          "API network error / rate-limit gracefully handled"
+        ]
+      },
+      { "suite": "src/tests/AreaSearch.test.jsx", "passed": 12, "failed": 0 },
+      { "suite": "src/tests/Alerts.test.jsx", "passed": 4, "failed": 0 },
+      { "suite": "src/tests/Dashboard.test.jsx", "passed": 25, "failed": 0 },
+      { "suite": "src/tests/GlobalSearch.test.jsx", "passed": 6, "failed": 0 },
+      { "suite": "src/tests/auth.test.jsx", "passed": 7, "failed": 0 },
+      { "suite": "src/tests/localization.test.js", "passed": 30, "failed": 0 },
+      { "suite": "src/tests/offline.test.js", "passed": 10, "failed": 0 }
+    ],
+    "backend_validation_test_suites": [
+      { "suite": "src/services/satelliteLandCoverService.test.js", "passed": 28, "failed": 0 },
+      { "suite": "src/services/satelliteRiskFusion.test.js", "passed": 19, "failed": 0 }
+    ],
+    "total_tests_passed": 183,
+    "total_tests_failed": 0
+  },
+  "backend_status": {
+    "xgboost_models_affected": false,
+    "risk_fusion_weights_affected": false,
+    "risk_calculations_modified_in_this_step": false,
+    "backend_integrity": "100% unaffected. All backend services and models remain identical to Step 54C."
+  },
+  "known_limitations": [
+    "Esri World Imagery tile service is a public global basemap without cloud-mask guarantees on specific historical dates.",
+    "Analytical Sentinel-2 10m land cover represents optical observation; during heavy monsoon cloud-cover events, classification falls back safely to 'Satellite evidence unavailable'.",
+    "SAR interferometry (Sentinel-1 ground displacement) and real-time NDVI changes are excluded from this step per scope constraints."
+  ]
+}

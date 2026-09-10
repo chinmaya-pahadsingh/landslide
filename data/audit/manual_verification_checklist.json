@@ -1,0 +1,378 @@
+{
+  "title": "Landslide Early Warning & Risk Monitoring System — Manual Verification Checklist",
+  "audit_phase": "FINAL_AUDIT",
+  "version": "1.0.0",
+  "instructions": "Execute each test in sequence. Fill 'ACTUAL RESULT' and 'PASS/FAIL' for each item.",
+  "categories": {
+    "A_MUST_TEST_MANUALLY": [
+      {
+        "id": 1,
+        "test": "Open application from fresh start",
+        "steps": "Start backend (npm start on port 5000) and frontend (npm run dev on port 5173). Open browser at http://localhost:5173.",
+        "expected_result": "Application loads cleanly without runtime errors or blank white screen.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 2,
+        "test": "Login with each supported role",
+        "steps": "Open Auth modal. Test login with citizen, field_team, authority, and admin credentials.",
+        "expected_result": "Role badges reflect the logged-in role. Permissions correctly adapt per role.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 3,
+        "test": "Check dashboard loads",
+        "steps": "Navigate to /dashboard. Verify summary cards, alert feed, high-risk table, and quick actions.",
+        "expected_result": "Dashboard telemetry renders without NaN or infinite values. Skeletons resolve cleanly.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 4,
+        "test": "Open Risk Map",
+        "steps": "Click 'Risk Map' in primary navigation.",
+        "expected_result": "Leaflet map initializes centered on Northeast India (26.20°N, 92.93°E) at zoom level 6.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 5,
+        "test": "Test Historical mode",
+        "steps": "In Risk Map top toolbar, click 'Historical' segmented button.",
+        "expected_result": "Historical landslide incidents render as clustered Red (High >=65), Yellow/Amber (Medium 30-64), and Green (Low 10-29) dots based on 10 km density.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 6,
+        "test": "Test Current mode",
+        "steps": "In Risk Map top toolbar, click 'Current' segmented button.",
+        "expected_result": "Map switches to active real risk assessments only. If no active events exist, shows honest empty state notice.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 7,
+        "test": "Test Terrain map",
+        "steps": "Ensure basemap is set to OpenStreetMap Standard (Terrain/Street).",
+        "expected_result": "Street/topographic tiles load cleanly with visible road networks and contours.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 8,
+        "test": "Test Satellite map",
+        "steps": "Click basemap toggle button (Layers icon in floating controls or header badge).",
+        "expected_result": "Basemap switches to Esri World Imagery with crisp satellite raster imagery.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 9,
+        "test": "Switch all four combinations",
+        "steps": "1. Terrain + Historical, 2. Satellite + Historical, 3. Terrain + Current, 4. Satellite + Current.",
+        "expected_result": "Markers and overlays render accurately across all 4 modes without flicker, memory leak, or coordinate displacement.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 10,
+        "test": "Click historical markers",
+        "steps": "Click any visible historical marker on the map.",
+        "expected_result": "Popup opens showing: GSI/NASA Source, Density classification, Local Concentration (e.g. '75 records within 10 km'), State, District, and disclaimer: 'Reflects past documented activity only — NOT a current hazard, prediction, or early warning.'",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 11,
+        "test": "Click current markers",
+        "steps": "Click any active current hazard marker in Current Mode.",
+        "expected_result": "Popup displays current risk score, severity level, recorded timestamp, and 'Analyze Area Intelligence' action button.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 12,
+        "test": "Test Area Search",
+        "steps": "Type 'Shillong' or 'Gangtok' in the Area Search bar and select an autocomplete result.",
+        "expected_result": "Map pans smoothly to selected coordinates, displays blue marker, and opens the slide-over Area Intelligence panel.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 13,
+        "test": "Click map controls",
+        "steps": "Click Zoom In (+), Zoom Out (-), and Recenter buttons on floating map HUD.",
+        "expected_result": "Map zooms and recenters without throwing unhandled exceptions.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 14,
+        "test": "Verify controls don't change selected location",
+        "steps": "Select a location via search or map click. Then click zoom buttons and basemap toggle button.",
+        "expected_result": "Selected location and Area Intelligence focus remain strictly pinned; no unintended coordinates are selected.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 15,
+        "test": "Check satellite place-name labels",
+        "steps": "Switch basemap to Satellite. Zoom in to level 8–10 over Assam/Meghalaya.",
+        "expected_result": "Esri World Boundaries and Places reference labels (city names, state boundaries) render clearly ABOVE the satellite imagery tiles.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 16,
+        "test": "Check rainfall information",
+        "steps": "In Area Intelligence panel, inspect 'Rainfall & Precipitation' card.",
+        "expected_result": "Live rainfall telemetry displays event-day, 24h antecedent, and 3-day multi-scale values in mm.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 17,
+        "test": "Check weather information",
+        "steps": "Inspect weather conditions in Area Intelligence and Dashboard.",
+        "expected_result": "Displays temperature, humidity, rainfall forecast trends, and data freshness timestamp.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 18,
+        "test": "Check current risk calculation",
+        "steps": "Trigger area intelligence on high-slope coordinate (e.g. 27.33°N, 88.61°E).",
+        "expected_result": "Fused risk score [0, 100] calculated deterministically with categorical badge (Low, Medium, High, Critical).",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 19,
+        "test": "Check ML prediction display",
+        "steps": "Inspect ML Evidence card in Area Intelligence and direct inference at /api/ml/predict.",
+        "expected_result": "Direct ML returns susceptibility and trigger probability. Area Intelligence honestly displays 'Data Limitation' if model artifact is absent in secondary fusion wrapper.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 20,
+        "test": "Check alert generation using safe test conditions",
+        "steps": "Review early warning alerts generated under simulated high-rainfall test inputs.",
+        "expected_result": "Generates appropriate WATCH/WARNING/CRITICAL level with specific actionable trigger reasons.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 21,
+        "test": "Check notification display",
+        "steps": "Click Bell icon in header navigation to open Notification Center.",
+        "expected_result": "Slide-out notification tray opens showing recent alerts, unread counts, and severity color accents.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 22,
+        "test": "Check multilingual notification if available",
+        "steps": "Switch language in header to Hindi (हिन्दी) or Assamese (অসমীয়া). Open Notification Center.",
+        "expected_result": "Alert titles, severity badges, and dynamic hazard phrases translate into the chosen language.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 23,
+        "test": "Submit citizen report",
+        "steps": "Navigate to /field-reports, click 'Submit Citizen Report'. Enter hazard type, description, and coordinates.",
+        "expected_result": "Report submits successfully with HTTP 201; returns tracking ID and status 'pending'.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 24,
+        "test": "Verify geolocation",
+        "steps": "Click 'Use Current Location' button on citizen report form.",
+        "expected_result": "Browser prompts for location permission. On approval, populates latitude and longitude fields accurately.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 25,
+        "test": "Verify report appears in correct workflow",
+        "steps": "Inspect Field Reports table as citizen user.",
+        "expected_result": "Submitted report is visible under 'Recent Field Reports' with pending verification status badge.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 26,
+        "test": "Login as field officer",
+        "steps": "Log in with role 'field_team' or 'authority'. Open Field Reports page.",
+        "expected_result": "Action buttons ('Verify Report', 'Reject', 'Mark Investigating') become visible and active.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 27,
+        "test": "Process citizen report",
+        "steps": "Click 'Verify' on a pending citizen report, enter field notes, and submit.",
+        "expected_result": "Report status updates to 'verified'. Report is factored into evidence fusion pipeline.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 28,
+        "test": "Test road/village/infrastructure information",
+        "steps": "Open Area Intelligence for an arterial hill section (e.g. NH-10 near Teesta / Gangtok).",
+        "expected_result": "Displays operational priority score, connectivity disruption rating, and critical infrastructure assets.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 29,
+        "test": "Open News",
+        "steps": "Navigate to /news in primary navigation.",
+        "expected_result": "News feed renders showing regional disaster updates, source tags, disaster category pills, and publication timestamps.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 30,
+        "test": "Confirm only disaster-related news appears",
+        "steps": "Scan all headlines in News section.",
+        "expected_result": "Contains ONLY genuine natural disaster events (landslides, floods, cloudbursts, earthquakes). Zero sports, celebrity, or metaphorical 'landslide victory' political articles.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 31,
+        "test": "Test empty/loading/error states",
+        "steps": "Search for an invalid coordinate or non-existent settlement (e.g. 'XYZNONEXISTENT999').",
+        "expected_result": "Displays clean 'No results found' without unhandled JavaScript exceptions.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 32,
+        "test": "Disconnect network and test offline behavior",
+        "steps": "Open Chrome DevTools -> Network -> toggle 'Offline'. Refresh or submit citizen report.",
+        "expected_result": "App shell loads from Service Worker cache. Offline status banner appears. Citizen report is saved to offline localStorage queue.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 33,
+        "test": "Restore network and test synchronization",
+        "steps": "Toggle DevTools Network back to 'Online'.",
+        "expected_result": "Offline banner clears. Queued citizen reports automatically replay and synchronize with backend with duplicate prevention.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 34,
+        "test": "Refresh pages",
+        "steps": "Press F5 / hard refresh on /dashboard, /map, /alerts, /field-reports, and /news.",
+        "expected_result": "All routes mount cleanly on direct URL load without 404 or blank screen.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 35,
+        "test": "Open in another browser/device if possible",
+        "steps": "Open application in Chrome, Firefox, or Edge.",
+        "expected_result": "Layout, leaflet maps, and responsive panels render consistently.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 36,
+        "test": "Check mobile/responsive layout",
+        "steps": "In DevTools, toggle Device Emulation (iPhone / iPad / 375px width).",
+        "expected_result": "Navigation collapses into responsive mobile menu. Risk map and panels adapt smoothly without overflowing viewport.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 37,
+        "test": "Check console for runtime errors",
+        "steps": "Open browser Developer Console during all navigation.",
+        "expected_result": "Zero uncaught TypeError, ReferenceError, or fatal React component crashes.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 38,
+        "test": "Check network tab for failed requests",
+        "steps": "Inspect Network tab during normal operation.",
+        "expected_result": "All local API requests return HTTP 200/201. No repeating 500 error loops.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 39,
+        "test": "Check duplicate/unnecessary API requests",
+        "steps": "Click search and area intelligence repeatedly.",
+        "expected_result": "In-flight requests are properly deduplicated and debounced; no runaway request loops.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      },
+      {
+        "id": 40,
+        "test": "Check map performance with large historical dataset",
+        "steps": "Switch to Historical Mode displaying 10,236 records. Pan and zoom across Northeast India.",
+        "expected_result": "Canvas rendering (preferCanvas: true) maintains smooth 60fps pan/zoom without browser freeze.",
+        "actual_result": "[TO BE FILLED BY HUMAN]",
+        "pass_fail": "[TO BE FILLED BY HUMAN]"
+      }
+    ],
+    "B_GOOD_TO_TEST_MANUALLY": [
+      {
+        "id": 41,
+        "test": "Theme Switching (Dark / Light Mode)",
+        "expected_result": "High-contrast dark mode adapts to light mode with appropriate token contrast."
+      },
+      {
+        "id": 42,
+        "test": "News Category Filtering",
+        "expected_result": "Selecting 'Floods' or 'Landslides' pill filters news items strictly by disaster category."
+      },
+      {
+        "id": 43,
+        "test": "Manual News Refresh Cooldown",
+        "expected_result": "Clicking 'Refresh News' triggers cooldown counter (60s) preventing API quota exhaustion."
+      },
+      {
+        "id": 44,
+        "test": "Global Search (Ctrl+K shortcut)",
+        "expected_result": "Pressing Ctrl+K opens quick command palette searching across locations, alerts, and assets."
+      }
+    ],
+    "C_CAN_BE_VERIFIED_AUTOMATICALLY": [
+      {
+        "id": 45,
+        "test": "Backend Test Suite Execution",
+        "command": "npm test in backend root",
+        "automated_result": "30/30 suites PASS (100%)"
+      },
+      {
+        "id": 46,
+        "test": "Frontend Test Suite Execution",
+        "command": "npm test in frontend directory",
+        "automated_result": "11/11 suites in npm test PASS (100%)"
+      },
+      {
+        "id": 47,
+        "test": "Direct ML Inference Verification",
+        "command": "node src/services/mlPredictionService.test.js",
+        "automated_result": "42/42 assertions PASS (0 failures, exit 0)"
+      },
+      {
+        "id": 48,
+        "test": "Disaster News Regex Metaphor Filter",
+        "command": "npx vitest run src/tests/disasterNewsFilter.test.jsx",
+        "automated_result": "20/20 test cases PASS"
+      }
+    ]
+  }
+}

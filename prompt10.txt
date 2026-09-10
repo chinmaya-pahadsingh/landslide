@@ -1,0 +1,762 @@
+<USER_REQUEST>
+STEP FINAL-JUDGE-READINESS-AUDIT — FULL PROJECT VERIFICATION & ONLY REQUIRED FIXES
+
+ROLE:
+Act as a senior SIH hackathon technical reviewer, software architect,
+ML/GIS reviewer, and strict judge.
+
+OBJECTIVE:
+Audit the CURRENT project against the complete judge evaluation checklist
+provided below.
+
+IMPORTANT:
+This is NOT a request to rebuild the project.
+
+FIRST inspect the existing implementation thoroughly.
+Then classify every requirement as:
+
+PASS = genuinely implemented and working
+PARTIAL = implemented but incomplete/broken
+MISSING = not implemented
+BLOCKED = requires external configuration/data/service that is genuinely unavailable
+
+Use actual code, APIs, tests, configuration, and runtime behavior as evidence.
+
+DO NOT trust previous AI-generated reports blindly.
+
+==================================================
+ABSOLUTE SAFETY RULES
+==================================================
+
+1. DO NOT create fake functionality.
+2. DO NOT create mock data just to make a judge test pass.
+3. DO NOT claim a feature works unless the implementation actually works.
+4. DO NOT replace real data with synthetic data.
+5. DO NOT duplicate existing utilities, APIs, services, components, models,
+   or architectures.
+6. Before creating anything, search the entire repository for an existing
+   implementation.
+7. If a requirement is already correctly implemented, DO NOT modify it.
+8. Make the minimum changes necessary.
+9. Do NOT perform unrelated refactoring.
+10. Do NOT redesign the UI.
+11. Do NOT add unnecessary dependencies.
+12. Do NOT modify working features merely for cosmetic reasons.
+
+PROTECTED SYSTEMS:
+
+DO NOT modify XGBoost model files or retrain models unless a genuine
+implementation defect directly prevents the required functionality.
+
+DO NOT modify:
+- ML model weights
+- trained model artifacts
+- feature ordering
+- current-risk scoring formulas
+- evidence-fusion weights
+- early-warning logic
+- notification logic
+- historical GSI dataset
+- NASA historical records
+- MongoDB data unnecessarily
+- authentication architecture
+- already accepted Risk Map historical implementation
+- already accepted disaster-news filtering
+
+If a protected component has a genuine bug, REPORT it first and only make
+a minimal fix if it is necessary for this judge-readiness audit.
+
+==================================================
+CURRENT PROJECT PRINCIPLE
+==================================================
+
+The project is:
+
+"AI-Based Early Warning and Landslide Risk Monitoring System in NER"
+
+The intended architecture is:
+
+SUSCEPTIBILITY
+  ↓
+Terrain / slope / historical geological context
+
+DYNAMIC TRIGGERS
+  ↓
+Rainfall / soil moisture / weather/environmental conditions
+
+ML EVIDENCE
+  ↓
+XGBoost susceptibility + trigger assessment
+
+EXPOSURE
+  ↓
+Roads / villages / infrastructure / population or vulnerable assets
+
+FIELD EVIDENCE
+  ↓
+Citizen + field officer observations
+
+EVIDENCE FUSION / RISK
+  ↓
+Current risk assessment
+
+EARLY WARNING
+  ↓
+WATCH / WARNING / CRITICAL where thresholds and evidence justify it
+
+RESPONSE
+  ↓
+Road / village / infrastructure prioritisation
+
+NEWS
+  ↓
+Supporting disaster awareness only
+NOT a direct replacement for the risk engine.
+
+Historical landslide activity MUST remain contextual evidence and must NOT
+be represented as current hazard or prediction.
+
+==================================================
+AUDIT THE FOLLOWING 42 JUDGE QUESTIONS
+==================================================
+
+ROUND 1 — PROBLEM & SYSTEM CONCEPT
+
+Q1.
+Can the team explain in one minute:
+- problem being solved
+- why manual/existing systems are insufficient
+- what this platform actually provides?
+
+Check whether the website itself supports this explanation.
+
+Q2.
+Does the project clearly address Northeast India-specific conditions?
+
+Verify NER geographic scope and relevant disaster context.
+
+Q3.
+Does the implementation clearly distinguish:
+
+- susceptibility
+- dynamic trigger
+- current risk
+- historical evidence
+- deterministic scoring
+- ML prediction/assessment
+
+Find and flag any misleading terminology.
+
+Q4.
+Does the system avoid claiming that it can predict:
+"landslide will definitely happen tomorrow at 3 PM"?
+
+Verify UI wording, API responses, alerts, and documentation.
+
+==================================================
+ROUND 2 — AI / ML
+==================================================
+
+Q5.
+Find the EXACT AI pipeline.
+
+Produce:
+
+INPUT
+ ↓
+MODEL
+ ↓
+OUTPUT
+ ↓
+HOW OUTPUT AFFECTS FINAL RISK
+
+Do not simply say "XGBoost".
+
+Q6.
+Identify the exact inputs/features used by the susceptibility model.
+
+Verify from actual feature-engineering/model code.
+
+Q7.
+Identify the exact inputs/features used by the trigger model.
+
+Verify from actual code.
+
+Q8.
+Verify why XGBoost is used and whether this explanation matches the
+actual implementation.
+
+Q9.
+Audit the actual training datasets.
+
+Report:
+- dataset names
+- record counts
+- positive samples
+- negative/background samples
+- source
+- labels
+- whether negatives are actually confirmed negatives
+- train/validation/test methodology
+- possible spatial/temporal leakage
+
+DO NOT invent missing information.
+
+Q10.
+Find actual model evaluation results.
+
+Report, if genuinely available:
+- ROC-AUC
+- precision
+- recall
+- F1
+- validation methodology
+
+If metrics are unavailable, say:
+"NOT VERIFIED / NOT AVAILABLE"
+
+DO NOT manufacture metrics.
+
+Also verify that UI/documentation does not incorrectly translate model
+metrics into future-landslide prediction accuracy.
+
+==================================================
+ROUND 3 — REAL-TIME ENVIRONMENTAL DATA
+==================================================
+
+Q11.
+Trace rainfall end-to-end:
+
+PROVIDER
+ ↓
+API/endpoint/data source
+ ↓
+backend service
+ ↓
+processing
+ ↓
+risk engine
+ ↓
+frontend
+
+Identify exact files/functions.
+
+Q12.
+Determine whether rainfall is:
+- physical gauge data
+- satellite data
+- reanalysis/model data
+- forecast data
+- other
+
+Do not guess.
+
+Q13.
+Test failure handling.
+
+When rainfall/weather provider fails:
+
+API failure
+ ↓
+availability detection
+ ↓
+missing/unavailable state
+ ↓
+SAFE BEHAVIOR
+
+Verify that missing data is NOT silently converted to zero.
+
+Q14.
+Verify what happens when rainfall becomes extremely high.
+
+If the system has a safe way to test this using existing test/inference
+pathways, perform it.
+
+Do NOT inject fake production data into the database.
+
+==================================================
+ROUND 4 — TERRAIN & HISTORICAL EVIDENCE
+==================================================
+
+Q15.
+Verify what a RED historical Risk Map marker means.
+
+It MUST NOT be called:
+"high current risk"
+
+It should represent:
+"High Historical Landslide Activity"
+
+Q16.
+Verify historical records cannot trigger:
+- WATCH
+- WARNING
+- CRITICAL
+- emergency notifications.
+
+Q17.
+Verify why Historical and Current modes are separated.
+
+==================================================
+ROUND 5 — GIS
+==================================================
+
+Q18.
+Verify location search and selected-location workflow.
+
+Check:
+- search
+- coordinates
+- terrain
+- environmental information
+- historical evidence
+- current risk when genuinely available
+
+Q19.
+Verify Historical → Current separation.
+
+Q20.
+Verify Terrain/Street → Satellite.
+
+Basemap changes must NOT modify:
+- location
+- zoom
+- selected area
+- risk data
+- active mode
+
+Q21.
+Verify grey historical markers remain hidden visually while their
+underlying records remain preserved.
+
+==================================================
+ROUND 6 — EARLY WARNING
+==================================================
+
+Q22.
+Trace the actual warning pipeline:
+
+Environmental Data
+ ↓
+ML Evidence
+ ↓
+Risk Score / Evidence Fusion
+ ↓
+Risk Level
+ ↓
+Threshold
+ ↓
+Alert
+
+Identify exact implementation files.
+
+Q23.
+Verify HIGH vs CRITICAL semantics from actual code.
+
+Q24.
+Verify what happens when risk crosses an actual warning threshold.
+
+Check whether alert contains, where implemented:
+- severity
+- location
+- timestamp
+- reason/evidence
+- recommended response/action
+- notification pathway
+
+DO NOT create fake alerts merely for demonstration.
+
+If safe test/simulation infrastructure already exists, verify it.
+
+==================================================
+ROUND 7 — FIELD REPORTING
+==================================================
+
+Q25.
+Verify:
+
+GPS
+ ↓
+Observation/report
+ ↓
+Submission
+ ↓
+Backend
+ ↓
+Authority workflow
+
+Q26.
+Verify citizen reporting.
+
+Q27.
+Verify report lifecycle after submission:
+pending/reviewed/verified/etc. based on actual implementation.
+
+Q28.
+Determine whether field observations actually influence risk assessment.
+
+Do not claim they influence ML/risk if they currently do not.
+
+==================================================
+ROUND 8 — DISASTER RESPONSE
+==================================================
+
+Q29.
+Verify whether prioritisation considers more than raw risk:
+
+- risk
+- population/exposure
+- road importance
+- infrastructure
+- connectivity
+- alternative routes
+
+Identify exactly which are implemented.
+
+Q30.
+Verify whether the system can actually prioritize:
+- roads
+- villages
+- infrastructure
+
+If a priority framework exists but is not fully data-backed, classify it
+accurately as PARTIAL rather than PASS.
+
+==================================================
+ROUND 9 — DISASTER NEWS
+==================================================
+
+Q31.
+Verify the purpose of disaster news in the platform.
+
+News should be supporting situational awareness, not the primary risk engine.
+
+Q32.
+Verify disaster-only filtering.
+
+The News section should exclude unrelated:
+- cricket
+- politics
+- technology
+- entertainment
+- business
+
+and retain genuine disaster-related information such as:
+- landslide
+- flash flood
+- flood
+- avalanche
+- earthquake
+- tsunami
+- cyclone/storm
+- extreme rainfall
+- wildfire
+- disaster response
+
+Use the existing disaster-news filter.
+
+Q33.
+Verify news does NOT directly manipulate the ML/current risk score unless
+there is an explicitly implemented and validated mechanism.
+
+==================================================
+ROUND 10 — RELIABILITY
+==================================================
+
+Q34.
+Weather/rainfall unavailable:
+verify safe degraded behavior.
+
+Q35.
+Soil moisture unavailable:
+verify safe degraded behavior.
+
+Q36.
+ML service unavailable:
+verify safe behavior and no fabricated prediction.
+
+Q37.
+MongoDB unavailable:
+verify failure handling and no false "successful persistence".
+
+Q38.
+Poor network/offline:
+verify existing offline capability and synchronization.
+
+Check duplicate prevention if synchronization exists.
+
+Do not claim full offline capability if only a foundation exists.
+
+==================================================
+ROUND 11 — NOVELTY & TRUST
+==================================================
+
+Q39.
+Identify the technically meaningful novelty.
+
+Do not use generic:
+"AI + GIS"
+
+Explain actual integration between:
+terrain susceptibility
++
+dynamic triggers
++
+historical evidence
++
+field observations
++
+exposure/prioritisation
++
+early warning.
+
+Only claim components that genuinely exist.
+
+Q40.
+Explain why this is more than:
+Google Maps + weather + landslide dataset.
+
+Identify the actual operational/risk-engine functionality.
+
+Q41.
+Audit historical-data bias.
+
+Especially:
+GSI survey/reporting coverage differences between states,
+transport corridors, inhabited areas, and remote regions.
+
+Verify that the UI/documentation does not interpret low historical
+density as "safe".
+
+Q42.
+Verify trustworthiness of HIGH/CRITICAL warnings.
+
+Check:
+- evidence sources
+- model validation
+- uncertainty
+- data availability
+- thresholds
+- human/field verification
+- limitations/disclaimers
+
+No 100% certainty claims.
+
+==================================================
+LIVE DEMO SCENARIO
+==================================================
+
+Finally verify whether the current implementation can demonstrate this
+workflow using REAL or explicitly supported test/simulation pathways:
+
+Heavy rainfall in vulnerable mountainous area
+        ↓
+Environmental evidence
+        ↓
+Terrain susceptibility
+        ↓
+XGBoost assessment
+        ↓
+Final risk assessment
+        ↓
+Current Risk Map
+        ↓
+Early Warning
+        ↓
+Response Priority
+        ↓
+Field Officer Report
+        ↓
+Updated evidence
+
+IMPORTANT:
+
+Do NOT insert fake production records just to create this demonstration.
+
+If an existing controlled simulation/test pathway exists, use it.
+
+If a real dependency is unavailable, report exactly which dependency is
+blocking the demonstration.
+
+==================================================
+IMPLEMENTATION RULE
+==================================================
+
+After the complete audit:
+
+CREATE A TABLE:
+
+| Question | Status | Evidence | Actual Problem | Required Fix |
+|----------|--------|----------|----------------|--------------|
+
+for all Q1–Q42.
+
+Then create:
+
+A. ALREADY COMPLETE
+B. PARTIAL
+C. MISSING
+D. BLOCKED
+E. MISLEADING / INCORRECT CLAIMS
+F. SAFE TO LEAVE FOR DEMO
+G. HIGH PRIORITY FIXES
+
+==================================================
+FIX POLICY
+==================================================
+
+Only after the audit, fix genuine HIGH-PRIORITY or clearly necessary gaps.
+
+For every proposed code change:
+
+1. Search existing implementation first.
+2. Reuse existing architecture.
+3. Make the smallest safe change.
+4. Do not duplicate functionality.
+5. Do not alter protected systems unnecessarily.
+6. Run focused tests.
+7. Run affected regression tests.
+8. Verify no unrelated feature changed.
+
+If a feature requires:
+- external API credentials
+- real sensor hardware
+- unavailable government data
+- production deployment
+- unavailable infrastructure
+
+DO NOT fake it.
+
+Mark it BLOCKED or PARTIAL and explain exactly what is needed.
+
+==================================================
+REGRESSION PROTECTION
+==================================================
+
+Before finishing, verify that these already-working areas remain intact:
+
+- GSI NER historical dataset
+- 10,236 historical records
+- all 8 NER states
+- NASA/Himachal segregation
+- 10 km Haversine density
+- thresholds:
+    HIGH >=65
+    MEDIUM 30–64
+    LOW 10–29
+    INSUFFICIENT <10
+- grey historical markers hidden visually only
+- satellite imagery + reference labels
+- Historical/Current separation
+- disaster-only News filtering
+- XGBoost model artifacts
+- current-risk architecture
+- early-warning architecture
+- field reports
+- authentication
+- existing tests
+
+Do NOT weaken or delete tests.
+
+==================================================
+TESTING
+==================================================
+
+Run only relevant tests first.
+
+Then run affected regression suites.
+
+Report exact:
+
+Tests run:
+Passed:
+Failed:
+Skipped:
+
+Build:
+PASS/FAIL
+
+Also report any pre-existing failures separately from newly introduced
+failures.
+
+==================================================
+FINAL REPORT
+==================================================
+
+Create:
+
+data/audit/final_judge_readiness_report.json
+
+Include:
+
+- all Q1–Q42 statuses
+- evidence for each status
+- changes actually made
+- exact files changed
+- tests run
+- test results
+- build result
+- real data verification
+- ML verification
+- API/data-source verification
+- reliability verification
+- live-demo readiness
+- remaining blockers
+- known limitations
+- recommended manual demo sequence
+
+IMPORTANT:
+Do NOT claim 100% completion unless the implementation genuinely supports
+the claim.
+
+The report must distinguish:
+IMPLEMENTED
+VERIFIED
+PARTIAL
+BLOCKED
+NOT IMPLEMENTED
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+Return:
+
+1. Overall project readiness percentage based ONLY on verified requirements.
+2. Top 5 remaining problems, if any.
+3. Top 5 strongest features.
+4. Exact files changed.
+5. Exact tests passed/failed.
+6. Build status.
+7. What I should manually demonstrate to a judge.
+8. What I should NOT claim to a judge.
+
+If all critical judge-facing requirements are genuinely working:
+
+FINAL STATUS: JUDGE READY
+
+Otherwise:
+
+FINAL STATUS: NOT YET JUDGE READY
+
+Do NOT begin any unrelated feature or Step 55.
+STOP after this audit and necessary fixes.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-10T14:38:40+05:30.
+
+The user's current state is as follows:
+Active Document: c:\New folder\PROJECT\data\project\project_status_problem_statement_audit.json (LANGUAGE_JSON)
+Cursor is on line: 1
+Other open documents:
+- c:\New folder\PROJECT\data\project\project_status_problem_statement_audit.json (LANGUAGE_JSON)
+- c:\New folder\PROJECT\ml\README.md (LANGUAGE_MARKDOWN)
+- c:\New folder\PROJECT\package.json (LANGUAGE_JSON)
+Running terminal commands:
+- npm start (in c:\New folder\PROJECT, running for 4h52m2s)
+- npm run dev (in c:\New folder\PROJECT\frontend, running for 4h51m32s)
+- powershell -ExecutionPolicy Bypass -c 'irm https://astral.sh/uv/install.ps1 |... (in c:\New folder\PROJECT, running for 40m26s)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from Gemini 3.8 Flash (High) to Gemini 3.1 Pro (Low). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

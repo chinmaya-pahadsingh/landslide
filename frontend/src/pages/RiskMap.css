@@ -1,0 +1,685 @@
+/* ==========================================================================
+   RiskMap - GIS Command Center Styles
+   ========================================================================== */
+
+.risk-map-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Page Header */
+.risk-map-header {
+  padding: 1.75rem 2rem;
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.risk-map-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.risk-map-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 720px;
+}
+
+.risk-map-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.location-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--text-secondary));
+  background: hsla(var(--border-subtle), 0.5);
+  border: 1px solid var(--glass-border);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.location-pill .pill-icon {
+  color: hsl(var(--accent-primary));
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: hsl(var(--status-low));
+  box-shadow: 0 0 8px hsl(var(--status-low));
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+
+.risk-map-title {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.risk-map-subtitle {
+  font-size: 0.9rem;
+  color: hsl(var(--text-muted));
+  line-height: 1.5;
+  margin: 0;
+}
+
+.risk-map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.refresh-button-unified {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: hsl(var(--text-primary));
+  padding: 0.6rem 1.15rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.refresh-button-unified:hover:not(:disabled) {
+  background: var(--glass-bg-hover);
+  border-color: hsla(var(--border-strong), 0.5);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Map Command Workspace Frame */
+.risk-map-frame {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-border);
+}
+
+/* Command Toolbar */
+.risk-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+[data-theme='dark'] .risk-map-toolbar {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.toolbar-search-section {
+  flex: 1;
+  max-width: 480px;
+  min-width: 260px;
+}
+
+/* Custom AreaSearch overrides inside toolbar */
+.toolbar-search-section .search-input-wrapper {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+}
+
+.toolbar-search-section .search-input-wrapper:focus-within {
+  border-color: hsl(var(--accent-primary));
+  box-shadow: 0 0 0 2px hsla(var(--accent-primary), 0.25);
+}
+
+.toolbar-search-section .search-dropdown-menu {
+  background: hsl(var(--bg-secondary));
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.toolbar-status-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gis-metric-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  font-size: 0.78rem;
+  color: hsl(var(--text-secondary));
+  box-shadow: var(--shadow-sm);
+}
+
+.gis-metric-pill .metric-label {
+  color: hsl(var(--text-muted));
+}
+
+.gis-metric-pill .metric-val {
+  font-weight: 600;
+  color: hsl(var(--text-primary));
+}
+
+.gis-metric-pill.active-location {
+  border-color: hsla(var(--accent-primary), 0.4);
+  background: hsla(var(--accent-primary), 0.08);
+}
+
+.text-accent {
+  color: hsl(var(--accent-primary));
+}
+
+/* Map Wrapper & Viewport */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 640px;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+@media (min-width: 1280px) {
+  .map-wrapper {
+    height: calc(100vh - 300px);
+    min-height: 580px;
+  }
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  z-index: 1;
+  background-color: hsl(var(--bg-primary));
+}
+
+/* OSM Tiles Atmospheric Theme - Optimized for smooth zoom without heavy GPU inversion */
+.map-container {
+  background-color: #121826;
+}
+
+[data-theme='dark'] .leaflet-tile-pane {
+  filter: brightness(0.88) contrast(1.05) saturate(0.92);
+}
+
+[data-theme='light'] .leaflet-tile-pane,
+:root:not([data-theme='dark']) .leaflet-tile-pane {
+  filter: saturate(1.0) contrast(1.0);
+}
+
+/* Custom Leaflet Zoom Controls */
+.leaflet-control-zoom {
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-md) !important;
+  margin: 18px !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  color: hsl(var(--text-primary)) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  transition: all 0.2s ease !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--glass-bg-hover) !important;
+  color: hsl(var(--accent-primary)) !important;
+}
+
+/* Leaflet Attribution */
+.leaflet-control-attribution {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  color: hsl(var(--text-muted)) !important;
+  border-radius: var(--radius-sm) 0 0 0;
+  font-size: 0.68rem !important;
+  border-top: 1px solid var(--glass-border) !important;
+  border-left: 1px solid var(--glass-border) !important;
+  padding: 0.2rem 0.6rem !important;
+}
+
+.leaflet-control-attribution a {
+  color: hsl(var(--accent-primary)) !important;
+  text-decoration: none;
+}
+
+/* Map Overlays */
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: hsla(var(--bg-primary), 0.85);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.error-overlay {
+  padding: 2rem;
+}
+
+/* Floating Risk Legend HUD - Positioned cleanly on bottom-left */
+.map-legend {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: 0.9rem 1.15rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 400;
+  border: 1px solid var(--glass-border);
+  min-width: 200px;
+  max-width: 280px;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.legend-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--text-primary));
+}
+
+.legend-count {
+  font-size: 0.7rem;
+  color: hsl(var(--text-muted));
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: hsl(var(--text-secondary));
+}
+
+.legend-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-color-dot.crit {
+  background-color: hsl(var(--status-crit));
+  box-shadow: 0 0 8px hsla(var(--status-crit), 0.7);
+}
+
+.legend-color-dot.mod {
+  background-color: hsl(var(--status-mod));
+  box-shadow: 0 0 8px hsla(var(--status-mod), 0.7);
+}
+
+.legend-color-dot.low {
+  background-color: hsl(var(--status-low));
+  box-shadow: 0 0 8px hsla(var(--status-low), 0.7);
+}
+
+.legend-color-dot.unknown {
+  background-color: hsl(var(--text-muted));
+}
+
+.legend-empty-notice {
+  margin-top: 0.65rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--glass-border);
+  font-size: 0.72rem;
+  color: hsl(var(--text-muted));
+  text-align: center;
+}
+
+/* Custom Leaflet Popup Styling */
+.leaflet-popup-content-wrapper {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  color: hsl(var(--text-primary)) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--glass-border) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-tip {
+  background: var(--glass-bg) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  border-left: 1px solid var(--glass-border) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 1rem 1.15rem !important;
+  line-height: 1.4 !important;
+}
+
+.popup-content {
+  font-family: inherit;
+  font-size: 0.85rem;
+  min-width: 220px;
+}
+
+.popup-header {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  color: hsl(var(--text-primary));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+  gap: 1rem;
+  font-size: 0.82rem;
+}
+
+.popup-label {
+  color: hsl(var(--text-muted));
+  font-weight: 500;
+}
+
+.popup-value {
+  font-weight: 600;
+  text-transform: capitalize;
+  color: hsl(var(--text-primary));
+}
+
+.popup-value.bold {
+  font-weight: 700;
+}
+
+.popup-value.mono {
+  font-family: monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.popup-description {
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--glass-border);
+  font-size: 0.78rem;
+  color: hsl(var(--text-secondary));
+  line-height: 1.4;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  top: 10px !important;
+  right: 10px !important;
+  color: hsl(var(--text-muted)) !important;
+  padding: 4px !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: var(--radius-full) !important;
+  transition: all 0.15s ease !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  background: rgba(128, 128, 128, 0.15) !important;
+  color: hsl(var(--text-primary)) !important;
+}
+
+/* Area Intelligence Panel Harmonization */
+.map-wrapper .area-intelligence-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-lg);
+  z-index: 1000;
+}
+
+.map-wrapper .ai-panel-header {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+[data-theme='dark'] .map-wrapper .ai-panel-header {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.map-wrapper .ai-item {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .risk-map-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .risk-map-header-actions {
+    align-self: flex-start;
+  }
+
+  .risk-map-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-search-section {
+    max-width: 100%;
+  }
+
+  .toolbar-status-pills {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .risk-map-header {
+    padding: 1.25rem 1rem;
+  }
+
+  .risk-map-title {
+    font-size: 1.45rem;
+  }
+
+  .risk-map-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .map-wrapper {
+    height: 480px;
+    min-height: 400px;
+  }
+
+  .map-legend {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    min-width: auto;
+    padding: 0.75rem 1rem;
+  }
+
+  .legend-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .leaflet-control-zoom {
+    margin: 12px !important;
+  }
+}
+
+.map-popup-intel-btn {
+  margin-top: 0.75rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: hsla(var(--accent-primary), 0.15);
+  border: 1px solid hsla(var(--accent-primary), 0.35);
+  color: hsl(var(--accent-primary));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-popup-intel-btn:hover {
+  background: hsla(var(--accent-primary), 0.25);
+  border-color: hsla(var(--accent-primary), 0.5);
+}
+
+/* Risk Data Mode Segmented Control (Step 54D-FIX-2) */
+.risk-data-mode-control {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+}
+
+.risk-mode-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: hsl(var(--text-muted));
+  text-transform: uppercase;
+}
+
+.segmented-button-group {
+  display: inline-flex;
+  background: hsla(var(--bg-secondary), 0.7);
+  padding: 2px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  gap: 2px;
+}
+
+.segmented-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: hsl(var(--text-secondary));
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.segmented-btn:hover:not(.active) {
+  color: hsl(var(--text-primary));
+  background: hsla(var(--text-primary), 0.05);
+}
+
+.segmented-btn.active {
+  background: hsl(var(--accent-primary));
+  color: #ffffff;
+  box-shadow: 0 2px 6px hsla(var(--accent-primary), 0.35);
+}
+
+.mode-helper-text {
+  font-size: 0.72rem;
+  color: hsl(var(--text-muted));
+  font-style: italic;
+  white-space: nowrap;
+}
+
+/* Satellite geographic reference place-name labels (Step 54D-RISK-MAP-VISUAL-FINAL) */
+.satellite-reference-layer {
+  pointer-events: none !important;
+}
+
+

@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-09-09T17:15:00.000Z",
+  "final_verdict": "ML PREDICTION SERVICE: PASS",
+  "models_loaded": {
+    "susceptibility": {
+      "model_type": "XGBoost Binary Classifier",
+      "model_name": "xgboost_susceptibility",
+      "status": "operational",
+      "relative_path": "data/ml/xgboost_susceptibility_model.json",
+      "metadata_path": "data/ml/susceptibility_model_metadata.json"
+    },
+    "trigger": {
+      "model_type": "XGBoost Binary Classifier",
+      "model_name": "xgboost_trigger",
+      "status": "operational",
+      "relative_path": "data/ml/xgboost_trigger_model.json",
+      "metadata_path": "data/ml/trigger_model_metadata.json"
+    }
+  },
+  "feature_counts": {
+    "susceptibility_features": 4,
+    "trigger_features": 9,
+    "susceptibility_feature_list": [
+      "elevation_m",
+      "slope_deg",
+      "latitude",
+      "longitude"
+    ],
+    "trigger_feature_list": [
+      "elevation_m",
+      "slope_deg",
+      "latitude",
+      "longitude",
+      "precipitation_event_day_mm",
+      "precipitation_prev_24h_mm",
+      "precipitation_prev_3d_mm",
+      "precipitation_prev_7d_mm",
+      "precipitation_prev_30d_mm"
+    ]
+  },
+  "prediction_tests": {
+    "total_tests": 42,
+    "passed": 42,
+    "failed": 0,
+    "susceptibility_inference": {
+      "status": "passed",
+      "test_probability": 0.8043,
+      "valid_range": "[0, 1]"
+    },
+    "trigger_inference": {
+      "status": "passed",
+      "test_probability": 0.8263,
+      "valid_range": "[0, 1]"
+    }
+  },
+  "validation_tests": {
+    "missing_features_rejected": true,
+    "zero_substitution_prohibited": true,
+    "null_undefined_rejected": true,
+    "nan_rejected": true,
+    "infinity_rejected": true,
+    "non_numeric_types_rejected": true,
+    "authoritative_metadata_ordering_enforced": true
+  },
+  "failure_handling_tests": {
+    "missing_model_gracefully_unavailable": true,
+    "independent_model_isolation_passed": true,
+    "one_model_failure_does_not_break_other": true,
+    "bounded_execution_timeout_passed": true,
+    "zero_hanging_child_processes": true,
+    "sanitized_health_status_no_fs_leakage": true
+  },
+  "endpoint_created": true,
+  "endpoints": {
+    "predict": {
+      "method": "POST",
+      "path": "/api/ml/predict",
+      "protected": true,
+      "roles_allowed": ["admin", "authority"],
+      "rate_limited": true,
+      "max_requests_per_minute": 60
+    },
+    "status": {
+      "method": "GET",
+      "path": "/api/ml/status",
+      "protected": true,
+      "roles_allowed": ["admin", "authority"],
+      "rate_limited": false
+    }
+  },
+  "production_risk_engine_modified": false,
+  "mongodb_modified": false,
+  "backend_startup_status": "operational"
+}

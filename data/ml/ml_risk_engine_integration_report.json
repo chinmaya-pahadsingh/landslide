@@ -1,0 +1,121 @@
+{
+  "timestamp": "2026-09-09T17:35:00.000Z",
+  "step": "Step 53 — Integrate Trained XGBoost into the Existing Risk Engine",
+  "final_verdict": "STEP 53 ML RISK ENGINE INTEGRATION: PASS",
+  "integration_status": "operational",
+  "files_changed": [
+    "src/services/riskScoreService.js",
+    "src/controllers/riskAssessmentController.js",
+    "src/services/riskScoreService.test.js"
+  ],
+  "ml_models_used": {
+    "susceptibility": {
+      "model_name": "xgboost_susceptibility",
+      "model_type": "XGBoost Binary Classifier",
+      "artifact_path": "data/ml/xgboost_susceptibility_model.json",
+      "features_required": ["elevation_m", "slope_deg", "latitude", "longitude"],
+      "feature_count": 4,
+      "purpose": "Static terrain and physiographic predisposition modeling"
+    },
+    "trigger": {
+      "model_name": "xgboost_trigger",
+      "model_type": "XGBoost Binary Classifier",
+      "artifact_path": "data/ml/xgboost_trigger_model.json",
+      "features_required": [
+        "elevation_m",
+        "slope_deg",
+        "latitude",
+        "longitude",
+        "precipitation_event_day_mm",
+        "precipitation_prev_24h_mm",
+        "precipitation_prev_3d_mm",
+        "precipitation_prev_7d_mm",
+        "precipitation_prev_30d_mm"
+      ],
+      "feature_count": 9,
+      "purpose": "Dynamic multi-scale meteorological rainfall priming and trigger modeling"
+    }
+  },
+  "scoring_strategy_and_weights": {
+    "fusion_type": "bounded_weighted_fusion",
+    "score_range": "[0, 100]",
+    "risk_levels": {
+      "low": "0 - 25",
+      "medium": "26 - 50",
+      "high": "51 - 75",
+      "critical": "76 - 100"
+    },
+    "scenarios": {
+      "full_fusion": {
+        "condition": "Both susceptibility and trigger models available with valid features",
+        "weights": {
+          "heuristic_baseline": 0.40,
+          "xgboost_susceptibility": 0.30,
+          "xgboost_trigger": 0.30
+        },
+        "formula": "round(clamp(0.40 * baseline + 0.30 * (prob_susc * 100) + 0.30 * (prob_trig * 100), 0, 100))"
+      },
+      "susceptibility_only": {
+        "condition": "Susceptibility features available; trigger features incomplete or skipped",
+        "weights": {
+          "heuristic_baseline": 0.65,
+          "xgboost_susceptibility": 0.35,
+          "xgboost_trigger": 0.00
+        },
+        "formula": "round(clamp(0.65 * baseline + 0.35 * (prob_susc * 100), 0, 100))"
+      },
+      "trigger_only": {
+        "condition": "Trigger model available with complete features; susceptibility unavailable",
+        "weights": {
+          "heuristic_baseline": 0.65,
+          "xgboost_susceptibility": 0.00,
+          "xgboost_trigger": 0.35
+        },
+        "formula": "round(clamp(0.65 * baseline + 0.35 * (prob_trig * 100), 0, 100))"
+      },
+      "baseline_fallback": {
+        "condition": "No ML features provided, models unavailable, or execution error",
+        "weights": {
+          "heuristic_baseline": 1.00,
+          "xgboost_susceptibility": 0.00,
+          "xgboost_trigger": 0.00
+        },
+        "formula": "baseline"
+      }
+    }
+  },
+  "fallback_behavior": {
+    "missing_terrain": "Susceptibility model is skipped without zero-substitution; risk defaults to baseline or trigger-only.",
+    "missing_rainfall_history": "Trigger model is skipped without fabricating time-series data; susceptibility model operates safely.",
+    "model_file_unavailable": "Graceful fallback to rule-based baseline without throwing or crashing the endpoint.",
+    "python_process_failure_or_timeout": "Caught by fail-safe wrapper; API returns HTTP 200 with baseline score and limitation warning.",
+    "zero_substitution_enforced": true
+  },
+  "test_counts": {
+    "riskScoreService_tests": {
+      "total": 31,
+      "passed": 31,
+      "failed": 0,
+      "baseline_rule_tests": 13,
+      "ml_fusion_tests": 18
+    },
+    "mlPredictionService_tests": {
+      "total": 42,
+      "passed": 42,
+      "failed": 0
+    }
+  },
+  "regression_test_result": {
+    "status": "passed",
+    "services_tested": [
+      "riskScoreService",
+      "mlPredictionService",
+      "rainfallService",
+      "soilMoistureService",
+      "earlyWarningService",
+      "evidenceFusionService"
+    ],
+    "total_regressions": 0,
+    "all_existing_contracts_preserved": true
+  }
+}

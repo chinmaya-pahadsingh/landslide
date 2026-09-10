@@ -1,0 +1,99 @@
+{
+  "test_metrics": {
+    "roc_auc": 0.8713,
+    "pr_auc": 0.864,
+    "accuracy": 0.7966,
+    "precision": 0.7945,
+    "recall": 0.8,
+    "f1": 0.7973,
+    "confusion_matrix": {
+      "true_negative": 115,
+      "false_positive": 30,
+      "false_negative": 29,
+      "true_positive": 116
+    },
+    "threshold": 0.5,
+    "sample_count": 290,
+    "positive_count": 145,
+    "negative_count": 145
+  },
+  "val_metrics": {
+    "roc_auc": 0.8807,
+    "pr_auc": 0.8669,
+    "accuracy": 0.8067,
+    "precision": 0.7949,
+    "recall": 0.8267,
+    "f1": 0.8105,
+    "confusion_matrix": {
+      "true_negative": 118,
+      "false_positive": 32,
+      "false_negative": 26,
+      "true_positive": 124
+    },
+    "threshold": 0.5,
+    "sample_count": 300,
+    "positive_count": 150,
+    "negative_count": 150
+  },
+  "train_metrics": {
+    "roc_auc": 0.9747,
+    "pr_auc": 0.9745,
+    "accuracy": 0.913,
+    "precision": 0.8854,
+    "recall": 0.9487,
+    "f1": 0.916,
+    "confusion_matrix": {
+      "true_negative": 736,
+      "false_positive": 103,
+      "false_negative": 43,
+      "true_positive": 796
+    },
+    "threshold": 0.5,
+    "sample_count": 1678,
+    "positive_count": 839,
+    "negative_count": 839
+  },
+  "baseline": {
+    "dummy_majority_accuracy": 0.5,
+    "random_roc_auc": 0.5
+  },
+  "feature_importance": {
+    "elevation_m": {
+      "gain": 11.36,
+      "weight": 274
+    },
+    "slope_deg": {
+      "gain": 16.4,
+      "weight": 176
+    },
+    "latitude": {
+      "gain": 15.71,
+      "weight": 396
+    },
+    "longitude": {
+      "gain": 11.82,
+      "weight": 454
+    },
+    "precipitation_event_day_mm": {
+      "gain": 5.2,
+      "weight": 88
+    },
+    "precipitation_prev_24h_mm": {
+      "gain": 5.33,
+      "weight": 107
+    },
+    "precipitation_prev_3d_mm": {
+      "gain": 7.03,
+      "weight": 139
+    },
+    "precipitation_prev_7d_mm": {
+      "gain": 4.62,
+      "weight": 82
+    },
+    "precipitation_prev_30d_mm": {
+      "gain": 7.17,
+      "weight": 150
+    }
+  },
+  "training_duration_seconds": 0.14
+}

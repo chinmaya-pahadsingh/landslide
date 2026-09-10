@@ -1,0 +1,35 @@
+{
+  "name": "landslide-monitoring-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node src/models/LandslideEvent.test.js && node src/models/FieldReport.test.js && node src/models/InfrastructureAsset.test.js && npx jest src/services/terrainService.test.js && node src/services/riskScoreService.test.js && node src/services/rainfallService.test.js && node src/services/soilMoistureService.test.js && npx jest src/services/mlDatasetService.test.js && npx jest src/services/mlRiskModelService.test.js && node src/services/evidenceFusionService.test.js && node src/services/infrastructurePriorityService.test.js && node src/services/earlyWarningService.test.js && node src/models/NewsItem.test.js && node src/services/newsService.test.js && node src/services/newsProviders/newsApiProvider.test.js && node src/models/Notification.test.js && node src/services/notificationService.test.js && node src/tests/idempotency.test.js && npx jest src/tests/auth.test.js && npx jest src/controllers/areaIntelligenceController.test.js && npx jest src/tests/areaIntelligence.test.js && npx jest src/tests/step55Integration.test.js && npx jest src/tests/step56AreaIntelligence.test.js && npx jest src/tests/step57Infrastructure.test.js && npx jest src/tests/step58Reliability.test.js && npx jest src/scripts/importNasaLandslideCsv.test.js && node src/services/mlPredictionService.test.js && node src/services/liveEnvironmentalHardening.test.js && node src/services/satelliteLandCoverService.test.js && node src/services/satelliteRiskFusion.test.js",
+    "test:ml": "python ml/test_train.py && python ml/test_train_model.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "AI-Based Early Warning and Landslide Risk Monitoring System - Backend",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.4"
+  },
+  "devDependencies": {
+    "jest": "^30.5.1",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "<rootDir>/frontend/"
+    ],
+    "testTimeout": 30000
+  }
+}

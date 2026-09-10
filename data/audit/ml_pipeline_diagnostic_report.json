@@ -1,0 +1,237 @@
+{
+  "training": {
+    "status": "trained",
+    "executedScript": "data/ml/train_xgboost_models.py",
+    "trainingFramework": "XGBoost 3.4.1 (Python 3.13, scikit-learn 1.9.0)",
+    "trainingTimestamp": "2026-09-09T16:50:58Z",
+    "reverificationTimestamp": "2026-09-10T07:28:15Z",
+    "modelsTrained": 2,
+    "susceptibilityModel": {
+      "modelType": "XGBoost Binary Classifier (tree_method=hist)",
+      "task": "Static Landslide Susceptibility Modeling",
+      "features": [
+        "elevation_m",
+        "slope_deg",
+        "latitude",
+        "longitude"
+      ],
+      "hyperparameters": {
+        "n_estimators": 250,
+        "max_depth": 5,
+        "learning_rate": 0.04,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "min_child_weight": 3,
+        "gamma": 1.0,
+        "eval_metric": "logloss",
+        "best_iteration": 247
+      },
+      "validationStrategy": "Spatial Grid Blocking (0.5 deg resolution, 122 blocks)",
+      "splitCounts": {
+        "train": 13542,
+        "val": 3195,
+        "test": 3735
+      },
+      "metrics": {
+        "roc_auc": 0.8167,
+        "pr_auc": 0.8167,
+        "accuracy": 0.7328,
+        "precision": 0.7508,
+        "recall": 0.7370,
+        "f1": 0.7438,
+        "confusionMatrix": {
+          "true_negative": 1288,
+          "false_positive": 481,
+          "false_negative": 517,
+          "true_positive": 1449
+        }
+      },
+      "featureImportanceGain": {
+        "slope_deg": 32.85,
+        "elevation_m": 16.69,
+        "longitude": 15.91,
+        "latitude": 15.25
+      }
+    },
+    "triggerModel": {
+      "modelType": "XGBoost Binary Classifier (tree_method=hist)",
+      "task": "Dynamic Landslide Trigger Modeling",
+      "features": [
+        "elevation_m",
+        "slope_deg",
+        "latitude",
+        "longitude",
+        "precipitation_event_day_mm",
+        "precipitation_prev_24h_mm",
+        "precipitation_prev_3d_mm",
+        "precipitation_prev_7d_mm",
+        "precipitation_prev_30d_mm"
+      ],
+      "hyperparameters": {
+        "n_estimators": 200,
+        "max_depth": 4,
+        "learning_rate": 0.03,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "min_child_weight": 2,
+        "gamma": 1.0,
+        "eval_metric": "logloss",
+        "best_iteration": 197
+      },
+      "validationStrategy": "Temporal Date-Grouped Blocking (330 unique dates)",
+      "splitCounts": {
+        "train": 1678,
+        "val": 300,
+        "test": 290
+      },
+      "metrics": {
+        "roc_auc": 0.8713,
+        "pr_auc": 0.8640,
+        "accuracy": 0.7966,
+        "precision": 0.7945,
+        "recall": 0.8000,
+        "f1": 0.7973,
+        "confusionMatrix": {
+          "true_negative": 115,
+          "false_positive": 30,
+          "false_negative": 29,
+          "true_positive": 116
+        }
+      },
+      "featureImportanceGain": {
+        "slope_deg": 16.40,
+        "latitude": 15.71,
+        "longitude": 11.82,
+        "elevation_m": 11.36,
+        "precipitation_prev_30d_mm": 7.17,
+        "precipitation_prev_3d_mm": 7.03,
+        "precipitation_prev_24h_mm": 5.33,
+        "precipitation_event_day_mm": 5.20,
+        "precipitation_prev_7d_mm": 4.62
+      }
+    }
+  },
+  "dataset": {
+    "sourceAgency": "Geological Survey of India (GSI) - Landslide Atlas & Survey Catalog",
+    "geographicCoverage": "North-East India (NER) 8 States",
+    "susceptibilityDataset": {
+      "filePath": "data/gsi/ml_susceptibility_dataset_v1.csv",
+      "totalSamples": 20472,
+      "positiveSamples": 10236,
+      "backgroundSamples": 10236,
+      "classRatio": "1:1",
+      "targetLabel": "target (1: verified landslide presence, 0: background point with 2km exclusion buffer)",
+      "topographySource": "Copernicus DEM GLO-30 (90m sampling)"
+    },
+    "triggerDataset": {
+      "filePath": "data/gsi/ml_trigger_dataset_v1.csv",
+      "totalSamples": 2268,
+      "positiveSamples": 1134,
+      "backgroundSamples": 1134,
+      "classRatio": "1:1",
+      "targetLabel": "target (1: date-verified event occurrence, 0: temporally matched background point)",
+      "precipitationSource": "Open-Meteo ERA5-Land historical precipitation archive"
+    }
+  },
+  "modelArtifact": {
+    "susceptibility": {
+      "path": "data/ml/xgboost_susceptibility_model.json",
+      "sizeBytes": 726705,
+      "metadataPath": "data/ml/susceptibility_model_metadata.json",
+      "format": "Native XGBoost Booster JSON",
+      "status": "verified_loadable"
+    },
+    "trigger": {
+      "path": "data/ml/xgboost_trigger_model.json",
+      "sizeBytes": 300483,
+      "metadataPath": "data/ml/trigger_model_metadata.json",
+      "format": "Native XGBoost Booster JSON",
+      "status": "verified_loadable"
+    }
+  },
+  "modelLoading": {
+    "service": "src/services/mlPredictionService.js",
+    "bridge": "src/services/mlPredictBridge.py",
+    "statusEndpoint": "GET /api/ml/status",
+    "operationalStatus": "operational",
+    "bridgeCommunication": "JSON over stdin/stdout, non-blocking child_process.spawn with 5000ms timeout",
+    "zeroSubstitutionProhibited": true,
+    "errorHandling": "Real system/bridge errors preserved and logged without generic masking"
+  },
+  "featurePipeline": {
+    "comparisonTable": [
+      { "feature": "elevation_m", "source": "Copernicus DEM (90m)", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "slope_deg", "source": "Copernicus DEM (90m)", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "latitude", "source": "Location Coordinate", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "longitude", "source": "Location Coordinate", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "precipitation_event_day_mm", "source": "Open-Meteo Weather Telemetry", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "precipitation_prev_24h_mm", "source": "Open-Meteo Weather Telemetry", "training": "yes", "inference": "yes", "status": "PASS" },
+      { "feature": "precipitation_prev_3d_mm", "source": "Open-Meteo Multi-Day Archive", "training": "yes", "inference": "conditional", "status": "PASS (skipped safely when multi-day archive incomplete; no zero-substitution)" },
+      { "feature": "precipitation_prev_7d_mm", "source": "Open-Meteo Multi-Day Archive", "training": "yes", "inference": "conditional", "status": "PASS (skipped safely when multi-day archive incomplete; no zero-substitution)" },
+      { "feature": "precipitation_prev_30d_mm", "source": "Open-Meteo Multi-Day Archive", "training": "yes", "inference": "conditional", "status": "PASS (skipped safely when multi-day archive incomplete; no zero-substitution)" }
+    ]
+  },
+  "predictionAPI": {
+    "endpoints": [
+      { "method": "GET", "path": "/api/ml/status", "description": "Operational health and loaded models" },
+      { "method": "POST", "path": "/api/ml/predict", "description": "Dual-engine static & trigger predictions" },
+      { "method": "GET", "path": "/api/area-intelligence", "description": "Complete multi-source evidence fusion including ML prediction" },
+      { "method": "GET", "path": "/api/dashboard/intelligence", "description": "Dashboard overview with ML susceptibility integration" }
+    ],
+    "livePredictionTest": {
+      "coordinates": { "latitude": 27.33, "longitude": 88.61 },
+      "httpStatus": 200,
+      "mlPredictionStatus": "success",
+      "modelType": "XGBoost Static Susceptibility",
+      "susceptibilityProbability": 0.722112,
+      "predictedClass": 1,
+      "riskLevel": "high",
+      "triggerStatus": "skipped",
+      "triggerReason": "Multi-scale antecedent precipitation (3d/7d/30d) time-series incomplete; trigger prediction skipped without fabricating data."
+    }
+  },
+  "frontendIntegration": {
+    "component": "frontend/src/components/AreaIntelligencePanel.jsx",
+    "provenanceBadge": "XGBoost (ml/predict.py)",
+    "statesHandled": [
+      "Operational prediction available: displays Active badge, susceptibility probability, categorical risk level (HIGH/LOW), and trigger status",
+      "Model unavailable: displays inference service failure reason",
+      "Validation error: displays feature range/type error",
+      "Incomplete feature data: displays exact missing feature without fake zero-substitution"
+    ],
+    "evidenceFusionStatus": "available",
+    "dataLimitationsCount": 0
+  },
+  "satelliteLandCover": {
+    "provider": "Sentinel-2 10m Land Cover (ESA / Impact Observatory / Esri Living Atlas)",
+    "imageServerUrl": "https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/identify",
+    "resolution": "10 meters per pixel",
+    "timeoutConfigMs": 10000,
+    "liveQueryCoordinates": { "latitude": 27.33, "longitude": 88.61 },
+    "liveResult": {
+      "available": true,
+      "classCode": 8,
+      "className": "Bare Ground",
+      "category": "bare",
+      "contributionPoints": 5
+    }
+  },
+  "rootCause": [
+    "Dual ML Pipeline Disconnect: A prototype/stub service in ml/ (which executed ml/predict.py against empty ml/artifacts/) was wired into areaIntelligenceController and dashboardIntelligenceController, bypassing the fully-trained, operational XGBoost production pipeline in data/ml/ and managed by mlPredictionService.js.",
+    "Sentinel-2 ImageServer Latency vs Timeout: The ArcGIS Living Atlas image server takes 3.4s-5.5s to respond from India. The previous 5000ms timeout caused ECONNABORTED network timeouts under slight latency jitter.",
+    "Omission of Top-Level satelliteEvidence: While satelliteLandCover was queried, areaIntelligenceController did not expose satelliteEvidence as a top-level key in the API response, causing fallback checks to report unavailable.",
+    "Server Process In-Memory State: The npm start background server was running continuously for over 3 hours and had not reloaded active controller modifications."
+  ],
+  "fixesApplied": [
+    "Wired mlPredictionService.predictSusceptibility into areaIntelligenceController.js and dashboardIntelligenceController.js, preserving unit test mock compatibility.",
+    "Made BASE_DIR dynamic in data/ml/train_xgboost_models.py to prevent hardcoded directory assumptions.",
+    "Increased default timeout to 10,000ms in src/services/satelliteProviders/sentinel2LandCoverProvider.js.",
+    "Exposed satelliteEvidence as a top-level property in areaIntelligenceController.js response payload.",
+    "Updated AreaIntelligencePanel.jsx to display rich operational states (susceptibility probability, categorical risk, trigger status) while maintaining strict test compatibility.",
+    "Verified live end-to-end API execution: verified 0 limitations, mlPrediction: true, and satellite: true on coordinates (27.33, 88.61)."
+  ],
+  "remainingIssues": [
+    "Active Terminal Restart Required: The user or terminal manager must restart the background 'npm start' process so Node reloads the updated controller files into active memory.",
+    "Multi-Scale Antecedent Rainfall for Dynamic Trigger: Real-time point queries currently skip the dynamic trigger model safely because 3d/7d/30d historical precipitation is only fetched during historical backfills; static susceptibility runs at 100% operational capacity."
+  ]
+}

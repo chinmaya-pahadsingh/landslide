@@ -1,0 +1,250 @@
+{
+  "step": "STEP 54D-NER-DENSITY-AUDIT",
+  "auditTitle": "Data-Driven Historical Landslide Density Threshold Analysis for Northeast India",
+  "auditScope": "READ-ONLY AUDIT — NO SOURCE CODE, DATABASE, OR THRESHOLDS MODIFIED.",
+  "datasetInformation": {
+    "authoritativeDataset": "Geological Survey of India (GSI) National Landslide Susceptibility Mapping (NLSM) NER Cleaned Inventory v2",
+    "filename": "data/gsi/gsi_ner_landslides_clean_v2.csv",
+    "totalRecords": 10236,
+    "validCoordinateRecords": 10236,
+    "uniqueCoordinates": 9775,
+    "colocatedLocations": 299,
+    "geographicBounds": {
+      "latitudeMin": 22.02,
+      "latitudeMax": 28.51,
+      "longitudeMin": 88.08,
+      "longitudeMax": 97.08
+    }
+  },
+  "stateDistribution": {
+    "Mizoram": {
+      "totalRecords": 3199,
+      "percentage": 31.25,
+      "meanDensity": 91.42,
+      "medianDensity": 63.0,
+      "minDensity": 1,
+      "maxDensity": 315
+    },
+    "Nagaland": {
+      "totalRecords": 1829,
+      "percentage": 17.87,
+      "meanDensity": 76.19,
+      "medianDensity": 48.0,
+      "minDensity": 1,
+      "maxDensity": 273
+    },
+    "Manipur": {
+      "totalRecords": 1609,
+      "percentage": 15.72,
+      "meanDensity": 49.95,
+      "medianDensity": 47.0,
+      "minDensity": 0,
+      "maxDensity": 241
+    },
+    "Arunachal Pradesh": {
+      "totalRecords": 1127,
+      "percentage": 11.01,
+      "meanDensity": 28.71,
+      "medianDensity": 27.0,
+      "minDensity": 0,
+      "maxDensity": 73
+    },
+    "Meghalaya": {
+      "totalRecords": 889,
+      "percentage": 8.68,
+      "meanDensity": 41.56,
+      "medianDensity": 37.0,
+      "minDensity": 0,
+      "maxDensity": 94
+    },
+    "Sikkim": {
+      "totalRecords": 758,
+      "percentage": 7.41,
+      "meanDensity": 85.12,
+      "medianDensity": 88.0,
+      "minDensity": 7,
+      "maxDensity": 168
+    },
+    "Assam": {
+      "totalRecords": 735,
+      "percentage": 7.18,
+      "meanDensity": 49.12,
+      "medianDensity": 31.0,
+      "minDensity": 0,
+      "maxDensity": 155
+    },
+    "Tripura": {
+      "totalRecords": 90,
+      "percentage": 0.88,
+      "meanDensity": 12.46,
+      "medianDensity": 11.0,
+      "minDensity": 0,
+      "maxDensity": 75
+    }
+  },
+  "methodology": {
+    "aggregationMethod": "Fixed-radius spatial neighborhood query using great-circle Haversine formula",
+    "neighborhoodRadiusKm": 10.0,
+    "searchAreaSqKm": 314.16,
+    "definition": "For each event, density is the count of other historical events within a 10 km radius circle (excluding self)",
+    "implementation": "Matches frontend/src/utils/historicalRiskDensity.js great-circle distance algorithm exactly"
+  },
+  "densityStatistics": {
+    "minimum": 0,
+    "maximum": 315,
+    "mean": 66.75,
+    "median": 48.0,
+    "percentiles": {
+      "p10": 14.0,
+      "p25": 28.0,
+      "p50": 48.0,
+      "p75": 81.0,
+      "p90": 149.0,
+      "p95": 230.0
+    }
+  },
+  "currentThresholdDistribution": {
+    "thresholds": {
+      "HIGH": ">= 80",
+      "MEDIUM": "20 to 79",
+      "LOW": "3 to 19",
+      "INSUFFICIENT": "< 3"
+    },
+    "counts": {
+      "HIGH": 2644,
+      "MEDIUM": 5944,
+      "LOW": 1505,
+      "INSUFFICIENT": 143
+    },
+    "percentages": {
+      "HIGH": 25.83,
+      "MEDIUM": 58.07,
+      "LOW": 14.70,
+      "INSUFFICIENT": 1.40
+    },
+    "observations": [
+      "The HIGH threshold (>= 80) aligns almost precisely with the 75th percentile (p75 = 81.0), classifying the upper quartile of points as High historical activity.",
+      "The MEDIUM category (20-79) creates a severe 'bloated middle' problem, engulfing 58.07% of all locations and causing the majority of the regional map to display as uniform amber.",
+      "Arunachal Pradesh Anomaly: Arunachal Pradesh has 1,127 field-validated landslide records along major transit corridors, yet its maximum 10 km density is 73. Consequently, 0 records (0.0%) in Arunachal Pradesh qualify as HIGH under the current threshold.",
+      "Tripura Anomaly: Tripura has 90 records along ridge infrastructure, with a max density of 75, resulting in 0 records (0.0%) classified as HIGH.",
+      "The INSUFFICIENT category (< 3) is overly narrow (only 1.40%), classifying locations with as few as 3 events per 314 sq km (~1 event per 105 sq km) as 'LOW Activity' rather than statistically sparse."
+    ]
+  },
+  "candidateThresholdSets": [
+    {
+      "name": "Candidate Set 1 (Balanced Empirical Quantiles — PREFERRED)",
+      "thresholds": {
+        "HIGH": ">= 65",
+        "MEDIUM": "30 to 64",
+        "LOW": "10 to 29",
+        "INSUFFICIENT": "< 10"
+      },
+      "counts": {
+        "HIGH": 3586,
+        "MEDIUM": 3926,
+        "LOW": 2092,
+        "INSUFFICIENT": 632
+      },
+      "percentages": {
+        "HIGH": 35.03,
+        "MEDIUM": 38.35,
+        "LOW": 20.44,
+        "INSUFFICIENT": 6.17
+      },
+      "stateHighCounts": {
+        "Mizoram": 1552,
+        "Nagaland": 609,
+        "Sikkim": 501,
+        "Manipur": 416,
+        "Meghalaya": 282,
+        "Assam": 175,
+        "Arunachal Pradesh": 50,
+        "Tripura": 1
+      },
+      "rationale": "Breaks up the bloated 58% MEDIUM bucket into a balanced 35% High / 38% Medium / 20% Low / 6% Insufficient split. Resolves the complete blackout in Arunachal Pradesh by recognizing 50 critical landslide cluster points along high-risk transit highways (e.g. Bhalukpong-Bomdila and Itanagar corridors) as HIGH, while raising the INSUFFICIENT cutoff to < 10 (less than 1 event per 31 sq km) to reflect real survey limitations honestly."
+    },
+    {
+      "name": "Candidate Set 2 (High-Selectivity Corridors)",
+      "thresholds": {
+        "HIGH": ">= 70",
+        "MEDIUM": "35 to 69",
+        "LOW": "12 to 34",
+        "INSUFFICIENT": "< 12"
+      },
+      "counts": {
+        "HIGH": 3153,
+        "MEDIUM": 3759,
+        "LOW": 2501,
+        "INSUFFICIENT": 823
+      },
+      "percentages": {
+        "HIGH": 30.80,
+        "MEDIUM": 36.72,
+        "LOW": 24.43,
+        "INSUFFICIENT": 8.04
+      },
+      "stateHighCounts": {
+        "Mizoram": 1430,
+        "Nagaland": 514,
+        "Sikkim": 484,
+        "Manipur": 310,
+        "Meghalaya": 242,
+        "Assam": 153,
+        "Arunachal Pradesh": 19,
+        "Tripura": 1
+      },
+      "rationale": "Maintains tighter selectivity on HIGH (top 30.8%), while splitting the remaining dataset evenly across Medium and Low. However, it only assigns 19 points in Arunachal Pradesh to High, slightly under-representing documented linear highway clusters."
+    },
+    {
+      "name": "Candidate Set 3 (Corridor Sensitivity)",
+      "thresholds": {
+        "HIGH": ">= 60",
+        "MEDIUM": "25 to 59",
+        "LOW": "5 to 24",
+        "INSUFFICIENT": "< 5"
+      },
+      "counts": {
+        "HIGH": 4056,
+        "MEDIUM": 3996,
+        "LOW": 1943,
+        "INSUFFICIENT": 241
+      },
+      "percentages": {
+        "HIGH": 39.62,
+        "MEDIUM": 39.04,
+        "LOW": 18.98,
+        "INSUFFICIENT": 2.35
+      },
+      "stateHighCounts": {
+        "Mizoram": 1679,
+        "Nagaland": 684,
+        "Sikkim": 545,
+        "Manipur": 538,
+        "Meghalaya": 308,
+        "Assam": 208,
+        "Arunachal Pradesh": 93,
+        "Tripura": 1
+      },
+      "rationale": "Ensures strong regional sensitivity with 93 High points in Arunachal Pradesh and 308 in Meghalaya, but inflates the HIGH category to nearly 40% of all points, diminishing visual contrast in Mizoram and Sikkim."
+    }
+  ],
+  "preferredRecommendation": {
+    "proposedThresholds": {
+      "HIGH": ">= 65",
+      "MEDIUM": "30 to 64",
+      "LOW": "10 to 29",
+      "INSUFFICIENT": "< 10"
+    },
+    "justification": "Candidate Set 1 (65 / 30 / 10) provides the optimal balance between statistical rigour and geospatial utility: (1) It disaggregates the single giant 58% MEDIUM tier into well-differentiated High and Medium bands; (2) It provides equitable representation across all 8 NER states, capturing severe highway cluster corridors in Arunachal Pradesh (50 points) and Tripura (1 point) that are currently invisible under the 80 threshold; (3) It realistically reflects survey sparsity by designating areas with fewer than 10 events within 10 km (~1 event per 31.4 sq km) as Insufficient Evidence rather than misleadingly assuring users with 'Low Activity'."
+  },
+  "semanticDistinction": {
+    "definition": "Historical Risk Density strictly quantifies documented past slope failure occurrences within a 10 km radius over decades of field mapping.",
+    "explicitExclusions": "It does NOT represent current risk, probability of future landslides, current hazard level, prediction, or early warning. Historical records are contextual evidence only."
+  },
+  "coverageLimitations": {
+    "reportingBias": "GSI NLSM field mapping was conducted primarily along transport arteries, populated river valleys, and critical infrastructure corridors. Remote, roadless ridgelines have fewer mapped records due to survey access constraints, not because they are immune to slope failures.",
+    "stateSurveyDifferences": "Mizoram and Nagaland exhibit high record counts due to systematic post-cyclone landslide mapping and compact hill settlements. Arunachal Pradesh features vast, inaccessible wilderness areas where mapping was restricted to arterial corridors.",
+    "interpretationGuideline": "Lower historical density must never be interpreted as an assurance of lower current hazard or safety."
+  },
+  "finalVerdict": "THRESHOLDS: RECOMMEND REVISION"
+}

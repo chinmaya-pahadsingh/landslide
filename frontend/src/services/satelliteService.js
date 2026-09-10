@@ -19,7 +19,7 @@ class SatelliteService {
       throw new Error('Latitude and longitude are required.');
     }
 
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
     const token = tokenOverride || (typeof localStorage !== 'undefined' ? localStorage.getItem('jwt_token') : null);
     const headers = { 'Content-Type': 'application/json' };
     if (token) {

@@ -32,7 +32,24 @@ const corsOptions = {
       allowedOrigins.push('http://localhost:5173');
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    let isAllowed = allowedOrigins.indexOf(origin) !== -1;
+    if (!isAllowed) {
+      try {
+        const originUrl = new URL(origin);
+        if (
+          originUrl.hostname.endsWith('.lhr.life') ||
+          originUrl.hostname.endsWith('.serveousercontent.com') ||
+          originUrl.hostname.endsWith('.trycloudflare.com') ||
+          originUrl.hostname.endsWith('.pinggy.link') ||
+          originUrl.hostname.endsWith('.onrender.com') ||
+          originUrl.hostname.endsWith('.railway.app')
+        ) {
+          isAllowed = true;
+        }
+      } catch (e) {}
+    }
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

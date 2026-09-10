@@ -40,7 +40,7 @@ export const fieldReportService = {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/field-reports`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/field-reports`, {
       method: 'POST',
       headers,
       body: JSON.stringify(reportData)

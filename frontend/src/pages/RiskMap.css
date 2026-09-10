@@ -523,7 +523,8 @@
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-lg);
   border-radius: var(--radius-lg);
-  z-index: 1000;
+  z-index: 1500 !important;
+  pointer-events: auto;
 }
 
 .map-wrapper .ai-panel-header {
@@ -537,6 +538,181 @@
 
 .map-wrapper .ai-item {
   border-bottom: 1px solid var(--glass-border);
+}
+
+/* ==========================================================================
+   Map Popup Area Intelligence Details Styles
+   ========================================================================== */
+
+.popup-intel-content {
+  min-width: 250px;
+  max-width: 320px;
+}
+
+.map-popup-intel-btn {
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, hsl(var(--accent-primary)) 0%, hsl(172, 75%, 45%) 100%);
+  color: #0b151f;
+  border: none;
+  box-shadow: 0 4px 12px hsla(var(--accent-primary), 0.35);
+  transition: all 0.2s ease;
+}
+
+.map-popup-intel-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px hsla(var(--accent-primary), 0.45);
+  filter: brightness(1.06);
+}
+
+.map-popup-intel-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.popup-intel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  color: #2dd4bf;
+  font-weight: 600;
+}
+
+.popup-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(45, 212, 191, 0.3);
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.popup-intel-error {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: hsla(var(--status-crit), 0.1);
+  border: 1px solid hsla(var(--status-crit), 0.3);
+  border-radius: var(--radius-md);
+  font-size: 0.76rem;
+  color: hsl(var(--status-crit));
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.popup-intel-results {
+  margin-top: 0.65rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.popup-intel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2dd4bf;
+  margin-bottom: 0.5rem;
+}
+
+.popup-intel-badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.popup-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.popup-risk-badge.badge-high,
+.popup-risk-badge.badge-critical {
+  background: hsla(var(--status-crit), 0.16);
+  color: hsl(var(--status-crit));
+  border: 1px solid hsla(var(--status-crit), 0.35);
+}
+
+.popup-risk-badge.badge-medium {
+  background: hsla(var(--status-warn), 0.16);
+  color: hsl(var(--status-warn));
+  border: 1px solid hsla(var(--status-warn), 0.35);
+}
+
+.popup-risk-badge.badge-low {
+  background: hsla(var(--status-low), 0.16);
+  color: hsl(var(--status-low));
+  border: 1px solid hsla(var(--status-low), 0.35);
+}
+
+.popup-risk-badge.badge-warning-advisory,
+.popup-risk-badge.badge-warning-watch {
+  background: hsla(210, 80%, 55%, 0.16);
+  color: hsl(210, 80%, 65%);
+  border: 1px solid hsla(210, 80%, 55%, 0.35);
+}
+
+.popup-risk-badge.badge-warning-critical,
+.popup-risk-badge.badge-warning-warning {
+  background: hsla(var(--status-crit), 0.16);
+  color: hsl(var(--status-crit));
+  border: 1px solid hsla(var(--status-crit), 0.35);
+}
+
+.popup-intel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.55rem;
+}
+
+.popup-intel-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.popup-intel-label {
+  font-size: 0.65rem;
+  color: hsl(var(--text-muted));
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.popup-intel-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
 }
 
 /* ==========================================================================

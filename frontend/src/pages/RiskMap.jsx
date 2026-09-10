@@ -3,6 +3,7 @@ import { useLocation, useNavigationType } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { landslideEventService } from '../services/landslideEventService';
+import { areaIntelligenceService } from '../services/areaIntelligenceService';
 import { useNetwork } from '../contexts/NetworkContext';
 import { LoadingSpinner, ErrorState } from '../components/StatusDisplay';
 import { AreaSearch } from '../components/AreaSearch';
@@ -44,58 +45,64 @@ const SATELLITE_REFERENCE_LAYER = {
   subdomains: ['server', 'services']
 };
 
-// Bulletproof button for Leaflet popups: attaches native DOM listener with stopPropagation
-// to guarantee execution even when Leaflet's disableClickPropagation suppresses React synthetic root bubbling.
-function PopupIntelButton({ onClick, children, className = "map-popup-intel-btn" }) {
+// Bulletproof button for Leaflet popups: stops Leaflet event bubbling while ensuring React click fires
+function PopupIntelButton({ onClick, children, className = "map-popup-intel-btn", disabled }) {
   const btnRef = useRef(null);
-  const lastClickRef = useRef(0);
-
-  const trigger = useCallback((e) => {
-    const now = Date.now();
-    if (now - lastClickRef.current < 250) {
-      return;
-    }
-    lastClickRef.current = now;
-    if (e) {
-      if (typeof e.stopPropagation === 'function') e.stopPropagation();
-      if (typeof e.preventDefault === 'function') e.preventDefault();
-    }
-    onClick?.(e);
-  }, [onClick]);
 
   useEffect(() => {
     const el = btnRef.current;
     if (!el) return;
 
-    const handleNative = (e) => {
-      trigger(e);
+    const stopPropagation = (e) => {
+      if (typeof e?.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
     };
 
-    el.addEventListener('click', handleNative);
-    el.addEventListener('pointerup', handleNative);
-    el.addEventListener('touchend', handleNative);
+    el.addEventListener('mousedown', stopPropagation);
+    el.addEventListener('click', stopPropagation);
+    el.addEventListener('touchstart', stopPropagation, { passive: true });
+
     return () => {
-      el.removeEventListener('click', handleNative);
-      el.removeEventListener('pointerup', handleNative);
-      el.removeEventListener('touchend', handleNative);
+      el.removeEventListener('mousedown', stopPropagation);
+      el.removeEventListener('click', stopPropagation);
+      el.removeEventListener('touchstart', stopPropagation);
     };
-  }, [trigger]);
+  }, []);
+
+  const handleClick = (e) => {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
+    onClick?.(e);
+  };
 
   return (
     <button
       ref={btnRef}
       type="button"
       className={className}
-      onClick={trigger}
+      onClick={handleClick}
+      disabled={disabled}
     >
       {children}
     </button>
   );
 }
 
-// Interactive marker for selected / clicked location that automatically opens details popup
+// Interactive marker for selected / clicked location that displays details and live Area Intelligence
 function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
   const markerRef = useRef(null);
+  const [intelState, setIntelState] = useState({
+    status: 'idle', // 'idle' | 'loading' | 'success' | 'error'
+    data: null,
+    error: null
+  });
+
+  // Reset intelligence state whenever selected coordinates change
+  useEffect(() => {
+    setIntelState({ status: 'idle', data: null, error: null });
+  }, [selectedLocation?.lat, selectedLocation?.lon]);
 
   useEffect(() => {
     if (markerRef.current && selectedLocation) {
@@ -114,6 +121,59 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
 
   const isMapClick = selectedLocation.triggerSource === 'map_click';
 
+  const handleAnalyze = async (e) => {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
+
+    // 1. Immediately inform parent to open/focus the AreaIntelligencePanel
+    onAnalyze?.(selectedLocation);
+
+    // 2. Fetch intelligence for direct inline popup presentation
+    setIntelState({ status: 'loading', data: null, error: null });
+    try {
+      const data = await areaIntelligenceService.getIntelligence(
+        selectedLocation.lat,
+        selectedLocation.lon
+      );
+      setIntelState({ status: 'success', data, error: null });
+    } catch (err) {
+      setIntelState({
+        status: 'error',
+        data: null,
+        error: err.message || 'Failed to fetch area intelligence.'
+      });
+    }
+  };
+
+  const intelData = intelState.data;
+  const riskLevel = 
+    intelData?.assessment?.riskLevel || 
+    intelData?.mlPrediction?.prediction?.riskLevel || 
+    (intelData?.evidenceFusion?.overallStatus ? intelData.evidenceFusion.overallStatus.replace('_', ' ') : null);
+
+  const riskScore = 
+    intelData?.assessment?.riskScore != null ? `${intelData.assessment.riskScore}%` :
+    intelData?.mlPrediction?.prediction?.probability != null ? `${(intelData.mlPrediction.prediction.probability * 100).toFixed(1)}%` :
+    null;
+
+  const warningLevel = intelData?.earlyWarning?.warningLevel;
+
+  const elevation = 
+    intelData?.elevation?.elevation ?? 
+    intelData?.contextualData?.terrain?.elevation;
+
+  const slope = 
+    intelData?.elevation?.slope ?? 
+    intelData?.contextualData?.terrain?.slope;
+
+  const rainfall = 
+    intelData?.weather?.currentRainfall ?? 
+    intelData?.rainfall?.past24h ?? 
+    intelData?.contextualData?.rainfall?.[0]?.amount;
+
+  const temp = intelData?.weather?.temperature;
+
   return (
     <CircleMarker
       ref={markerRef}
@@ -127,7 +187,7 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
       }}
     >
       <Popup autoClose={false} closeButton={true}>
-        <div className="popup-content">
+        <div className="popup-content popup-intel-content">
           <div className="popup-header">
             <MapPin size={14} />
             <span>{isMapClick ? 'Location Details' : (selectedLocation.triggerSource === 'search' ? 'Searched Location' : 'Selected Location')}</span>
@@ -145,11 +205,86 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
             <span className="popup-label">Region</span>
             <span className="popup-value">Northeast India GIS Grid</span>
           </div>
-          <PopupIntelButton
-            onClick={() => onAnalyze?.(selectedLocation)}
-          >
-            Analyze Area Intelligence
-          </PopupIntelButton>
+
+          {/* Inline Area Intelligence State */}
+          {intelState.status === 'loading' && (
+            <div className="popup-intel-loading">
+              <span className="popup-spinner"></span>
+              <span>Analyzing Area Intelligence...</span>
+            </div>
+          )}
+
+          {intelState.status === 'error' && (
+            <div className="popup-intel-error">
+              <span className="popup-error-msg">{intelState.error}</span>
+              <PopupIntelButton onClick={handleAnalyze}>
+                Retry Analysis
+              </PopupIntelButton>
+            </div>
+          )}
+
+          {intelState.status === 'success' && (
+            <div className="popup-intel-results">
+              <div className="popup-intel-header">
+                <ShieldAlert size={13} className="text-accent" />
+                <span className="popup-intel-title">Area Intelligence</span>
+              </div>
+
+              <div className="popup-intel-badges">
+                {riskLevel && (
+                  <span className={`popup-risk-badge badge-${riskLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                    {riskLevel.toUpperCase()} {riskScore ? `(${riskScore})` : ''}
+                  </span>
+                )}
+                {warningLevel && (
+                  <span className={`popup-risk-badge badge-warning-${warningLevel.toLowerCase()}`}>
+                    {warningLevel.replace('_', ' ').toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              <div className="popup-intel-grid">
+                {rainfall != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">24h Rain</span>
+                    <span className="popup-intel-val">{rainfall} mm</span>
+                  </div>
+                )}
+                {elevation != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Elevation</span>
+                    <span className="popup-intel-val">{Math.round(elevation)}m</span>
+                  </div>
+                )}
+                {slope != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Slope</span>
+                    <span className="popup-intel-val">{Math.round(slope)}°</span>
+                  </div>
+                )}
+                {temp != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Temp</span>
+                    <span className="popup-intel-val">{temp}°C</span>
+                  </div>
+                )}
+              </div>
+
+              <PopupIntelButton
+                onClick={() => onAnalyze?.(selectedLocation)}
+              >
+                View Full Intelligence Panel
+              </PopupIntelButton>
+            </div>
+          )}
+
+          {intelState.status === 'idle' && (
+            <PopupIntelButton
+              onClick={handleAnalyze}
+            >
+              Analyze Area Intelligence
+            </PopupIntelButton>
+          )}
         </div>
       </Popup>
     </CircleMarker>

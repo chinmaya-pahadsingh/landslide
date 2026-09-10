@@ -83,25 +83,25 @@ export default function NotificationCenter() {
   };
 
   const handleMarkAsRead = async (id, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
+    setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    window.dispatchEvent(new CustomEvent('alertsUpdated'));
     try {
       await notificationAPI.markAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      window.dispatchEvent(new CustomEvent('alertsUpdated'));
     } catch (err) {
-      console.error('Failed to mark as read', err);
+      console.warn('Failed to mark as read on server', err);
     }
   };
 
   const handleMarkAllAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    window.dispatchEvent(new CustomEvent('alertsUpdated'));
     try {
       await notificationAPI.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-      window.dispatchEvent(new CustomEvent('alertsUpdated'));
     } catch (err) {
-      console.error('Failed to mark all as read', err);
+      console.warn('Failed to mark all as read on server', err);
     }
   };
 

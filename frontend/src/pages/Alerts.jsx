@@ -57,22 +57,24 @@ export default function Alerts() {
   };
 
   const handleMarkAsRead = async (id) => {
+    // Optimistically update UI immediately
+    setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    window.dispatchEvent(new CustomEvent('alertsUpdated'));
     try {
       await notificationAPI.markAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      window.dispatchEvent(new CustomEvent('alertsUpdated'));
     } catch (err) {
-      console.error('Failed to mark alert as read', err);
+      console.warn('Failed to mark alert as read on server:', err);
     }
   };
 
   const handleMarkAllAsRead = async () => {
+    // Optimistically update UI immediately
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    window.dispatchEvent(new CustomEvent('alertsUpdated'));
     try {
       await notificationAPI.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      window.dispatchEvent(new CustomEvent('alertsUpdated'));
     } catch (err) {
-      console.error('Failed to mark all alerts as read', err);
+      console.warn('Failed to mark all alerts as read on server:', err);
     }
   };
 

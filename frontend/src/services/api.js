@@ -5,11 +5,9 @@ const getHeaders = (requireAuth = true) => {
     'Content-Type': 'application/json'
   };
   
-  if (requireAuth) {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  const token = localStorage.getItem('jwt_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   
   return headers;
@@ -117,8 +115,8 @@ export const newsAPI = {
 export const notificationAPI = {
   getAll: (params) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return api.get(`/notifications${qs}`).then(data => ({ data }));
+    return api.get(`/notifications${qs}`, false).then(data => ({ data }));
   },
-  markAsRead: (id) => api.patch(`/notifications/${id}/read`).then(data => ({ data })),
-  markAllAsRead: () => api.patch('/notifications/read-all').then(data => ({ data })),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`, null, false).then(data => ({ data })),
+  markAllAsRead: () => api.patch('/notifications/read-all', null, false).then(data => ({ data })),
 };

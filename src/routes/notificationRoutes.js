@@ -11,8 +11,8 @@ const { authenticate, requireRole } = require('../middleware/authMiddleware');
 
 router.get('/', getAllNotifications);
 router.post('/', authenticate, requireRole('admin', 'authority'), createNewNotification);
-router.patch('/read-all', authenticate, requireRole('admin', 'authority'), markAllNotificationsRead);
+router.patch('/read-all', markAllNotificationsRead);
 router.get('/:id', getNotificationById);
-router.patch('/:id/read', authenticate, requireRole('admin', 'authority'), markNotificationRead);
+router.patch('/:id/read', markNotificationRead);
 
 module.exports = router;

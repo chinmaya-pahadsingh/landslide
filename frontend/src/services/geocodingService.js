@@ -80,15 +80,31 @@ class GeocodingService {
             const photonJson = await photonRes.json();
             if (photonJson && Array.isArray(photonJson.features) && photonJson.features.length > 0) {
               data = photonJson;
-            } else if (!data) {
-              data = [];
             }
           }
         } catch (photonErr) {
           if (abortController.signal.aborted) throw photonErr;
-          if (!data) {
-            throw photonErr;
+        }
+      }
+
+      const hasResultsAfterPhoton = (Array.isArray(data) && data.length > 0) || (data && Array.isArray(data.features) && data.features.length > 0);
+
+      // 6. Tier 3 Fallback: Server-side geocoding proxy (/api/geocoding) with offline gazetteer
+      if (!hasResultsAfterPhoton) {
+        try {
+          const proxyUrl = `/api/geocoding?q=${encodeURIComponent(normalizedQuery)}`;
+          const proxyRes = await fetch(proxyUrl, {
+            signal: abortController.signal
+          });
+
+          if (proxyRes && proxyRes.ok) {
+            const proxyJson = await proxyRes.json();
+            if (Array.isArray(proxyJson) && proxyJson.length > 0) {
+              data = proxyJson;
+            }
           }
+        } catch (proxyErr) {
+          if (abortController.signal.aborted) throw proxyErr;
         }
       }
 
@@ -96,7 +112,7 @@ class GeocodingService {
         throw new Error('Geocoding providers unavailable.');
       }
 
-      // 6. Validation & Standardization
+      // 7. Validation & Standardization
       const results = this.parseResults(data);
 
       // 7. Cache non-empty results
@@ -154,7 +170,7 @@ class GeocodingService {
           const lat = parseFloat(item.lat);
           const lon = parseFloat(item.lon);
           return {
-            id: String(item.place_id || Math.random().toString()),
+            id: String(item.place_id || item.id || item.name || Math.random().toString()),
             name: item.display_name || item.name || 'Unknown Location',
             lat,
             lon

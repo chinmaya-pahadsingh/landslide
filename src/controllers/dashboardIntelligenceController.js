@@ -142,8 +142,9 @@ const getDashboardIntelligence = async (req, res) => {
       humidity: weatherData?.humidity ?? null,
       windSpeed: weatherData?.windSpeed ?? null,
       precipitationProbability: weatherData?.precipitationProbability ?? null,
-      rainfall24h: weatherData?.precipitation24h ?? null,
-      currentIntervalPrecipitation: weatherData?.precipitation ?? null,
+      rainfall24h: weatherData?.rainfall24h ?? weatherData?.precipitation24h ?? null,
+      currentIntervalPrecipitation: weatherData?.currentIntervalPrecipitation ?? weatherData?.precipitation ?? null,
+      dailyForecast: weatherData?.dailyForecast ?? null,
       recordedAt: weatherData?.recordedAt ? new Date(weatherData.recordedAt).toISOString() : null
     };
 

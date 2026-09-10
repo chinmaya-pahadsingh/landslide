@@ -73,6 +73,8 @@ class OpenMeteoProvider {
           longitude: lon,
           current: 'precipitation,temperature_2m,relative_humidity_2m,wind_speed_10m',
           hourly: 'precipitation,precipitation_probability',
+          daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max',
+          timezone: 'auto',
           past_hours: 24,
           forecast_hours: 1
         },
@@ -154,6 +156,19 @@ class OpenMeteoProvider {
         ? Math.round(current.wind_speed_10m * 10) / 10
         : null;
 
+      let dailyForecast = null;
+      const daily = response.data?.daily;
+      if (daily && Array.isArray(daily.time) && daily.time.length > 0) {
+        dailyForecast = daily.time.map((dateStr, idx) => ({
+          date: dateStr,
+          weatherCode: daily.weather_code?.[idx] ?? 0,
+          maxTemp: typeof daily.temperature_2m_max?.[idx] === 'number' ? Math.round(daily.temperature_2m_max[idx] * 10) / 10 : null,
+          minTemp: typeof daily.temperature_2m_min?.[idx] === 'number' ? Math.round(daily.temperature_2m_min[idx] * 10) / 10 : null,
+          precipitationSum: typeof daily.precipitation_sum?.[idx] === 'number' ? Math.round(daily.precipitation_sum[idx] * 10) / 10 : 0,
+          precipitationProbabilityMax: daily.precipitation_probability_max?.[idx] ?? null
+        })).slice(0, 7);
+      }
+
       return {
         precipitation: current.precipitation,
         precipitation24h: precipitation24h,
@@ -161,6 +176,7 @@ class OpenMeteoProvider {
         humidity,
         windSpeed,
         precipitationProbability,
+        dailyForecast,
         recordedAt: recordedAt
       };
     } catch (error) {

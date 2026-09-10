@@ -7,6 +7,7 @@ const OpenMeteoProvider = require('../services/weatherProviders/openMeteoProvide
 const soilMoistureIngestionService = require('../services/soilMoistureIngestionService');
 const terrainService = require('../services/terrainService');
 const mlRiskModelService = require('../services/mlRiskModelService');
+const { predictSusceptibility } = require('../services/mlPredictionService');
 
 jest.mock('../models/LandslideEvent');
 jest.mock('../models/FieldReport');
@@ -15,6 +16,7 @@ jest.mock('../services/weatherProviders/openMeteoProvider');
 jest.mock('../services/soilMoistureIngestionService');
 jest.mock('../services/terrainService');
 jest.mock('../services/mlRiskModelService');
+jest.mock('../services/mlPredictionService');
 
 describe('Dashboard Intelligence API (GET /api/dashboard/intelligence)', () => {
   beforeEach(() => {
@@ -51,6 +53,12 @@ describe('Dashboard Intelligence API (GET /api/dashboard/intelligence)', () => {
       status: 'success',
       modelVersion: '1.0.0',
       prediction: { probability: 0.75, class: 'High' }
+    });
+
+    predictSusceptibility.mockResolvedValue({
+      status: 'success',
+      probability: 0.75,
+      features: { elevation_m: 500, slope_deg: 22.5 }
     });
 
     LandslideEvent.find.mockReturnValue({

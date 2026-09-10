@@ -16,6 +16,7 @@ const areaIntelligenceRoutes = require('./routes/areaIntelligenceRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const mlRoutes = require('./routes/mlRoutes');
 const satelliteRoutes = require('./routes/satelliteRoutes');
+const geocodingRoutes = require('./routes/geocodingRoutes');
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use('/api/area-intelligence', areaIntelligenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/satellite', satelliteRoutes);
+app.use('/api/geocoding', geocodingRoutes);
 
 // Static frontend serving if built
 const frontendDistPath = path.join(__dirname, '../frontend/dist');

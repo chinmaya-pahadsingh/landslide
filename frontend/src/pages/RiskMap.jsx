@@ -10,7 +10,7 @@ import { AreaSearch } from '../components/AreaSearch';
 import { AreaIntelligencePanel } from '../components/AreaIntelligencePanel';
 import { MapUpdater } from '../components/MapUpdater';
 import { MapFloatingControls } from '../components/MapFloatingControls';
-import { RefreshCw, MapPin, Layers, ShieldAlert, Compass, History, Activity } from 'lucide-react';
+import { RefreshCw, MapPin, Layers, ShieldAlert, Compass, History, Activity, Cpu, Map as MapIcon } from 'lucide-react';
 import { preclassifyHistoricalEvents, classifyHistoricalEventDensity, HISTORICAL_COLORS } from '../utils/historicalRiskDensity';
 import './RiskMap.css';
 
@@ -45,9 +45,20 @@ const SATELLITE_REFERENCE_LAYER = {
   subdomains: ['server', 'services']
 };
 
-// Bulletproof button for Leaflet popups: stops Leaflet event bubbling while ensuring React click fires
+// Deterministic Regional Focus Location used exclusively for dedicated /area-intelligence route
+export const DEFAULT_REGIONAL_FOCUS = {
+  lat: 26.1445,
+  lon: 91.7362,
+  name: 'Regional Focus Location (Guwahati Hub)',
+  triggerSource: 'regional_default'
+};
+
+// Bulletproof button for Leaflet popups: stops Leaflet event bubbling while ensuring React and native click fire
 function PopupIntelButton({ onClick, children, className = "map-popup-intel-btn", disabled }) {
   const btnRef = useRef(null);
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
+  const lastClickRef = useRef(0);
 
   useEffect(() => {
     const el = btnRef.current;
@@ -59,18 +70,31 @@ function PopupIntelButton({ onClick, children, className = "map-popup-intel-btn"
       }
     };
 
+    const handleNativeClick = (e) => {
+      const now = Date.now();
+      if (now - lastClickRef.current < 250) return;
+      lastClickRef.current = now;
+      if (typeof e?.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
+      onClickRef.current?.(e);
+    };
+
+    el.addEventListener('click', handleNativeClick);
     el.addEventListener('mousedown', stopPropagation);
-    el.addEventListener('click', stopPropagation);
     el.addEventListener('touchstart', stopPropagation, { passive: true });
 
     return () => {
+      el.removeEventListener('click', handleNativeClick);
       el.removeEventListener('mousedown', stopPropagation);
-      el.removeEventListener('click', stopPropagation);
       el.removeEventListener('touchstart', stopPropagation);
     };
   }, []);
 
   const handleClick = (e) => {
+    const now = Date.now();
+    if (now - lastClickRef.current < 250) return;
+    lastClickRef.current = now;
     if (e && typeof e.stopPropagation === 'function') {
       e.stopPropagation();
     }
@@ -98,10 +122,12 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
     data: null,
     error: null
   });
+  const [showFullIntel, setShowFullIntel] = useState(false);
 
   // Reset intelligence state whenever selected coordinates change
   useEffect(() => {
     setIntelState({ status: 'idle', data: null, error: null });
+    setShowFullIntel(false);
   }, [selectedLocation?.lat, selectedLocation?.lon]);
 
   useEffect(() => {
@@ -146,14 +172,23 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
     }
   };
 
+  const handleViewFullIntelligence = (e) => {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
+    // Switch to full intelligence view within the popup and ensure side panel is also open
+    setShowFullIntel(true);
+    onAnalyze?.(selectedLocation);
+  };
+
   const intelData = intelState.data;
+  // API response has mlPrediction.prediction.riskLevel and evidenceFusion.overallStatus
+  // (no 'assessment' field exists in the area intelligence response schema)
   const riskLevel = 
-    intelData?.assessment?.riskLevel || 
     intelData?.mlPrediction?.prediction?.riskLevel || 
     (intelData?.evidenceFusion?.overallStatus ? intelData.evidenceFusion.overallStatus.replace('_', ' ') : null);
 
   const riskScore = 
-    intelData?.assessment?.riskScore != null ? `${intelData.assessment.riskScore}%` :
     intelData?.mlPrediction?.prediction?.probability != null ? `${(intelData.mlPrediction.prediction.probability * 100).toFixed(1)}%` :
     null;
 
@@ -190,7 +225,15 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
         <div className="popup-content popup-intel-content">
           <div className="popup-header">
             <MapPin size={14} />
-            <span>{isMapClick ? 'Location Details' : (selectedLocation.triggerSource === 'search' ? 'Searched Location' : 'Selected Location')}</span>
+            <span>
+              {isMapClick 
+                ? 'Location Details' 
+                : (selectedLocation.triggerSource === 'search' 
+                    ? 'Searched Location' 
+                    : (selectedLocation.triggerSource === 'regional_default' 
+                        ? 'Regional Focus Location' 
+                        : 'Selected Location'))}
+            </span>
           </div>
           <div className="popup-row">
             <span className="popup-value bold">{selectedLocation.name}</span>
@@ -223,7 +266,7 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
             </div>
           )}
 
-          {intelState.status === 'success' && (
+          {intelState.status === 'success' && !showFullIntel && (
             <div className="popup-intel-results">
               <div className="popup-intel-header">
                 <ShieldAlert size={13} className="text-accent" />
@@ -271,10 +314,127 @@ function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
               </div>
 
               <PopupIntelButton
-                onClick={() => onAnalyze?.(selectedLocation)}
+                onClick={handleViewFullIntelligence}
               >
                 View Full Intelligence Panel
               </PopupIntelButton>
+            </div>
+          )}
+
+          {intelState.status === 'success' && showFullIntel && (
+            <div className="popup-intel-results" style={{ maxHeight: '380px', overflowY: 'auto' }}>
+              <div className="popup-intel-header">
+                <MapIcon size={14} className="text-accent" />
+                <span className="popup-intel-title">Area Intelligence</span>
+              </div>
+
+              {/* Evidence-Based Risk Assessment */}
+              <div className="popup-row" style={{ marginTop: '0.4rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.35rem' }}>
+                <span className="popup-label" style={{ fontSize: '0.74rem' }}>Evidence-Based Risk Assessment</span>
+                <span className={`ai-status-badge ${intelData?.evidenceFusion?.overallStatus === 'available' ? 'ai-status-available' : 'ai-status-unavailable'}`} style={{ fontSize: '0.65rem' }}>
+                  {(intelData?.evidenceFusion?.overallStatus || 'available').toUpperCase()}
+                </span>
+              </div>
+
+              {/* Early Warning Status */}
+              {intelData?.earlyWarning && (
+                <div style={{ marginTop: '0.55rem', padding: '0.45rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <ShieldAlert size={12} /> Early Warning Status
+                    </span>
+                    <span className="ai-provenance-tag" style={{ fontSize: '0.6rem' }}>Decision Engine</span>
+                  </div>
+                  <div className="popup-row" style={{ marginBottom: '0.2rem' }}>
+                    <span className="popup-label" style={{ fontSize: '0.74rem' }}>Warning Level</span>
+                    <span className={`ai-warning-badge ai-warning-${intelData.earlyWarning.warningLevel || 'no_warning'}`} style={{ fontSize: '0.68rem', padding: '0.1rem 0.45rem' }}>
+                      {(intelData.earlyWarning.warningLevel || 'no_warning').replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+                  {intelData.earlyWarning.dataStatus === 'insufficient' && (
+                    <div style={{ fontSize: '0.72rem', color: 'hsl(var(--status-warn))', marginTop: '0.3rem', lineHeight: 1.35 }}>
+                      Advisory issued due to incomplete/unknown baseline data.
+                    </div>
+                  )}
+                  {intelData.earlyWarning.recommendedActions && intelData.earlyWarning.recommendedActions.length > 0 && (
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.72rem' }}>
+                      <div style={{ fontWeight: 600, color: 'hsl(var(--text-secondary))', marginBottom: '0.15rem' }}>Recommended Actions:</div>
+                      <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                        {intelData.earlyWarning.recommendedActions.map((action, idx) => (
+                          <li key={idx} style={{ marginBottom: '0.15rem' }}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Machine Learning Prediction */}
+              <div style={{ marginTop: '0.55rem', padding: '0.45rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Cpu size={12} /> Machine Learning Prediction
+                  </span>
+                  <span className="ai-provenance-tag" style={{ fontSize: '0.6rem' }}>XGBoost (ml/predict.py)</span>
+                </div>
+                <div className="popup-row">
+                  <span className="popup-label" style={{ fontSize: '0.74rem' }}>Prediction Status</span>
+                  <span className="popup-value" style={{ fontSize: '0.72rem' }}>
+                    {intelData?.evidenceAvailability?.mlPrediction && intelData?.mlPrediction?.status === 'success'
+                      ? `Active (v${intelData.mlPrediction.modelVersion || '1.0.0'})`
+                      : 'AI Prediction: Unavailable'}
+                  </span>
+                </div>
+                {intelData?.mlPrediction?.reason && (
+                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--text-muted))', marginTop: '0.25rem', lineHeight: 1.35 }}>
+                    <strong>Reason:</strong> {intelData.mlPrediction.reason}
+                  </div>
+                )}
+                {!intelData?.mlPrediction?.reason && !intelData?.evidenceAvailability?.mlPrediction && (
+                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--text-muted))', marginTop: '0.25rem', lineHeight: 1.35 }}>
+                    <strong>Reason:</strong> Required terrain features (elevation/slope) are unavailable for ML susceptibility prediction.
+                  </div>
+                )}
+              </div>
+
+              {/* Environmental Metrics */}
+              <div className="popup-intel-grid" style={{ marginTop: '0.55rem' }}>
+                {elevation != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Elevation</span>
+                    <span className="popup-intel-val">{Math.round(elevation)}m</span>
+                  </div>
+                )}
+                {slope != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Slope</span>
+                    <span className="popup-intel-val">{Math.round(slope)}°</span>
+                  </div>
+                )}
+                {rainfall != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">24h Rain</span>
+                    <span className="popup-intel-val">{rainfall} mm</span>
+                  </div>
+                )}
+                {temp != null && (
+                  <div className="popup-intel-item">
+                    <span className="popup-intel-label">Temp</span>
+                    <span className="popup-intel-val">{temp}°C</span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.55rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowFullIntel(false)}
+                  style={{ flex: 1, padding: '0.35rem', fontSize: '0.72rem' }}
+                >
+                  Show Summary View
+                </button>
+              </div>
             </div>
           )}
 
@@ -385,16 +545,29 @@ function isDocumentReload() {
 
 export default function RiskMap() {
   const routerLocation = useLocation();
-  const navigationType = typeof useNavigationType === 'function' ? useNavigationType() : 'POP';
+  const navigationType = useNavigationType();
+  const isDedicatedAreaIntelligence = routerLocation?.pathname === '/area-intelligence' || routerLocation?.pathname?.endsWith('/area-intelligence');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Explicit URL query location takes precedence if encoded in URL (Case 6)
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    return getUrlLocation(routerLocation?.search);
+    const urlLoc = getUrlLocation(routerLocation?.search);
+    if (urlLoc) return urlLoc;
+    if (routerLocation?.state?.selectedLocation) {
+      const stateLoc = routerLocation.state.selectedLocation;
+      if (Number.isFinite(stateLoc.lat) && Number.isFinite(stateLoc.lon)) {
+        return stateLoc;
+      }
+    }
+    if (isDedicatedAreaIntelligence) {
+      return DEFAULT_REGIONAL_FOCUS;
+    }
+    return null;
   });
   const [showIntelligence, setShowIntelligence] = useState(() => {
+    if (isDedicatedAreaIntelligence) return true;
     return Boolean(getUrlLocation(routerLocation?.search));
   });
   const [activeBasemap, setActiveBasemap] = useState('osm');
@@ -423,6 +596,17 @@ export default function RiskMap() {
     });
     setShowIntelligence(true);
   }, []);
+
+  // Dedicated /area-intelligence route synchronization:
+  // If navigating directly to /area-intelligence, automatically activate Area Intelligence and ensure regional focus is selected if none provided
+  useEffect(() => {
+    if (isDedicatedAreaIntelligence) {
+      setShowIntelligence(true);
+      if (!selectedLocation) {
+        handleLocationSelect(DEFAULT_REGIONAL_FOCUS, 'regional_default');
+      }
+    }
+  }, [isDedicatedAreaIntelligence, selectedLocation, handleLocationSelect]);
 
   // Sync explicit URL query parameters if they change dynamically
   useEffect(() => {
@@ -983,7 +1167,12 @@ export default function RiskMap() {
             
             <SelectedLocationMarker 
               selectedLocation={selectedLocation} 
-              onAnalyze={(loc) => handleLocationSelect(loc, loc.triggerSource || 'marker_click')} 
+              onAnalyze={(loc) => {
+                if (loc) {
+                  setSelectedLocation(loc);
+                }
+                setShowIntelligence(true);
+              }} 
             />
             
             {renderedMarkers}

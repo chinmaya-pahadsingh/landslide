@@ -20,8 +20,8 @@ function App() {
               <Routes>
                 <Route path="/" element={<AppLayout />}>
                   <Route index element={<Dashboard />} />
-                  <Route path="map" element={<RiskMap />} />
-                  <Route path="area-intelligence" element={<RiskMap />} />
+                  <Route path="map" element={<RiskMap key="map" />} />
+                  <Route path="area-intelligence" element={<RiskMap key="area-intelligence" />} />
                   <Route path="reports" element={<FieldReports />} />
                   <Route path="alerts" element={<Alerts />} />
                   <Route path="news" element={<News />} />

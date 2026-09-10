@@ -349,8 +349,10 @@ const getDashboardIntelligence = async (req, res) => {
         incidents: activeIncidents
       },
       aiRiskAnalysis: {
-        riskLevel: fusionResult.riskLevel || 'Unavailable',
-        riskScore: typeof fusionResult.riskScore === 'number' ? fusionResult.riskScore : null,
+        riskLevel: (mlPrediction?.status === 'success' && mlPrediction?.prediction?.riskLevel)
+          ? (mlPrediction.prediction.riskLevel.toUpperCase() === 'MEDIUM' ? 'MODERATE' : mlPrediction.prediction.riskLevel.toUpperCase())
+          : (fusionResult.riskLevel || 'Unavailable'),
+        riskScore: typeof fusionResult.riskScore === 'number' ? fusionResult.riskScore : (mlPrediction?.prediction?.probability ?? null),
         confidence: mlPrediction?.status === 'success' && mlPrediction?.prediction?.probability != null
           ? Math.round(mlPrediction.prediction.probability * 100) : null,
         mlStatus: mlPrediction?.status || 'unavailable',

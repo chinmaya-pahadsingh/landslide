@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import RiskMap from '../pages/RiskMap';
+import RiskMap, { DEFAULT_REGIONAL_FOCUS } from '../pages/RiskMap';
 import { landslideEventService } from '../services/landslideEventService';
 import { geocodingService } from '../services/geocodingService';
 import { areaIntelligenceService } from '../services/areaIntelligenceService';
@@ -559,6 +559,119 @@ describe('STEP 54D-FIX: Risk Map Regression & Core Fix Verification', () => {
       fireEvent.click(intelBtns[0]);
       expect(await screen.findByText('Area Intelligence')).toBeTruthy();
     });
+
+    it('33: After popup displays analyzed results, clicking "View Full Intelligence Panel" closes popup and displays full Area Intelligence panel', async () => {
+      areaIntelligenceService.getIntelligence.mockResolvedValue({
+        selectedLocation: { latitude: 26.1548, longitude: 91.7741 },
+        evidenceAvailability: { rainfall: true, terrain: true },
+        evidenceFusion: {
+          overallStatus: 'advisory',
+          evidence: {
+            terrain: { elevation: 127, slope: 16 }
+          },
+          limitations: []
+        },
+        mlPrediction: {
+          prediction: { riskLevel: 'critical', probability: 0.835 }
+        },
+        retrievedAt: new Date().toISOString()
+      });
+
+      render(<RiskMap />);
+      await waitFor(() => expect(screen.queryByText(/Loading geospatial risk data/i)).toBeNull());
+
+      expect(registeredMapClickHandler).toBeTruthy();
+      registeredMapClickHandler({
+        latlng: { lat: 26.1548, lng: 91.7741 },
+        originalEvent: { target: document.createElement('div') }
+      });
+
+      // Location Details popup appears
+      expect(await screen.findByText('Location Details')).toBeTruthy();
+
+      // Click Analyze Area Intelligence
+      const intelBtns = screen.getAllByRole('button', { name: /Analyze Area Intelligence/i });
+      fireEvent.click(intelBtns[0]);
+
+      // View Full Intelligence Panel button appears with analyzed summary
+      const viewFullBtn = await screen.findByRole('button', { name: /View Full Intelligence Panel/i });
+      expect(viewFullBtn).toBeTruthy();
+
+      // Click View Full Intelligence Panel
+      fireEvent.click(viewFullBtn);
+
+      // Full Area Intelligence panel header (h3) is open and visible
+      expect(await screen.findByRole('heading', { name: /Area Intelligence/i, level: 3 })).toBeTruthy();
+    });
+  });
+
+  describe('Area Intelligence Navigation Regression Fix (/area-intelligence vs /map)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      areaIntelligenceService.getIntelligence.mockResolvedValue({
+        selectedLocation: { latitude: 26.1445, longitude: 91.7362 },
+        evidenceAvailability: { rainfall: true, soilMoisture: false, historical: false, fieldReports: false },
+        evidenceFusion: {
+          overallStatus: 'available',
+          evidence: {
+            rainfall: { latestValue: 45, rainfall24h: 45, currentIntervalPrecipitation: 0 }
+          },
+          limitations: []
+        },
+        retrievedAt: new Date().toISOString()
+      });
+      landslideEventService.getAllEvents.mockResolvedValue([]);
+    });
+
+    it('A: Fresh /map has no selected location, no Area Intelligence drawer, and makes no intelligence API request', async () => {
+      mockRouterState = { state: null, search: '', pathname: '/map' };
+      render(<RiskMap />);
+      await waitFor(() => expect(screen.queryByText(/Loading geospatial risk data/i)).toBeNull());
+
+      // No Area Intelligence drawer
+      expect(screen.queryByText('Area Intelligence')).toBeNull();
+      // No intelligence API request
+      expect(areaIntelligenceService.getIntelligence).not.toHaveBeenCalled();
+    });
+
+    it('B: Dedicated /area-intelligence initializes deterministic regional default location (Guwahati Hub) and opens Area Intelligence', async () => {
+      mockRouterState = { state: null, search: '', pathname: '/area-intelligence' };
+      render(<RiskMap />);
+      await waitFor(() => expect(screen.queryByText(/Loading geospatial risk data/i)).toBeNull());
+
+      // Area Intelligence drawer opens automatically
+      expect(await screen.findByText('Area Intelligence')).toBeTruthy();
+
+      // Uses regional default focus (26.1445, 91.7362)
+      expect(areaIntelligenceService.getIntelligence).toHaveBeenCalledWith(
+        DEFAULT_REGIONAL_FOCUS.lat,
+        DEFAULT_REGIONAL_FOCUS.lon,
+        expect.anything()
+      );
+      expect(screen.getAllByText(/Regional Focus Location/i).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('C: Dedicated /area-intelligence preserves explicit coordinates when provided via URL query', async () => {
+      areaIntelligenceService.getIntelligence.mockResolvedValueOnce({
+        selectedLocation: { latitude: 27.0378, longitude: 88.2632 },
+        evidenceAvailability: { rainfall: true, soilMoisture: false, historical: false, fieldReports: false },
+        evidenceFusion: {
+          overallStatus: 'available',
+          evidence: {},
+          limitations: []
+        },
+        retrievedAt: new Date().toISOString()
+      });
+
+      mockRouterState = { state: null, search: '?lat=27.0378&lon=88.2632', pathname: '/area-intelligence' };
+      render(<RiskMap />);
+      await waitFor(() => expect(screen.queryByText(/Loading geospatial risk data/i)).toBeNull());
+
+      // Explicit coordinates preserved, not overwritten by default
+      expect(await screen.findByText('Area Intelligence')).toBeTruthy();
+      expect(areaIntelligenceService.getIntelligence).toHaveBeenCalledWith(27.0378, 88.2632, expect.anything());
+    });
   });
 });
+
 

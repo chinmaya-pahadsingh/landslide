@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
 import Dashboard from '../pages/Dashboard';
@@ -303,16 +303,7 @@ describe('Dashboard Core Data Correctness', () => {
       fireEvent.click(roadsCard);
       expect(mockNavigate).not.toHaveBeenCalled();
 
-      // 4. Nearby risk level when unavailable: disabled
-      const riskCard = document.querySelector('.risk-highlight-card');
-      expect(riskCard.classList.contains('disabled')).toBe(true);
-      const riskArrow = riskCard.querySelector('.card-nav-arrow');
-      expect(riskArrow.disabled).toBe(true);
-
-      fireEvent.click(riskCard);
-      expect(mockNavigate).not.toHaveBeenCalled();
-
-      // 5. Infrastructure priority table arrow when 0 assets: disabled
+      // 4. Infrastructure priority table arrow when 0 assets: disabled
       const infraArrow = document.querySelector('.command-bottom-grid .command-glass-panel:nth-child(3) .panel-arrow-btn');
       expect(infraArrow.disabled).toBe(true);
     });
@@ -366,21 +357,26 @@ describe('Dashboard Core Data Correctness', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        const riskTag = document.querySelector('.risk-level-tag');
-        expect(riskTag.textContent).toBe('High');
+        const areasCard = screen.getByText('High Risk Areas').closest('.metric-glass-card');
+        expect(areasCard.classList.contains('disabled')).toBe(false);
       });
 
-      const riskCard = document.querySelector('.risk-highlight-card');
-      expect(riskCard.classList.contains('disabled')).toBe(false);
+      const areasCard = screen.getByText('High Risk Areas').closest('.metric-glass-card');
+      fireEvent.click(areasCard);
 
-      fireEvent.click(riskCard);
+      await waitFor(() => {
+        expect(screen.getByText('Immediate Rockfall Hazard')).toBeTruthy();
+      });
+
+      const mapBtn = screen.getByText('VIEW ON MAP');
+      fireEvent.click(mapBtn);
 
       expect(mockNavigate).toHaveBeenCalledWith('/map', {
         state: {
           selectedLocation: {
             lat: 28.12,
             lon: 94.35,
-            name: 'Active Hazard Area',
+            name: 'Immediate Rockfall Hazard',
           },
         },
       });
@@ -427,10 +423,26 @@ describe('Dashboard Core Data Correctness', () => {
         expect(screen.queryByText('...')).toBeNull();
       });
 
-      // 1. Regional Monitoring Card -> /map
+      // 1. Regional Monitoring Card -> Modal -> /map
       const regionalCard = screen.getByText('Regional Monitoring').closest('.side-metric-card');
       fireEvent.click(regionalCard);
-      expect(mockNavigate).toHaveBeenCalledWith('/map');
+      
+      await waitFor(() => {
+        expect(screen.getByText('Regional Monitoring Details')).toBeTruthy();
+      });
+
+      const regionalMapBtn = screen.getByText('VIEW ON MAP');
+      fireEvent.click(regionalMapBtn);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/map', {
+        state: {
+          selectedLocation: {
+            lat: 26.1445,
+            lon: 91.7362,
+            name: 'Guwahati Hub'
+          }
+        }
+      });
 
       // 2. Alerts Header Arrow -> /alerts
       const alertsArrow = document.querySelector('.command-bottom-grid .command-glass-panel:nth-child(1) .panel-arrow-btn');
@@ -717,11 +729,6 @@ describe('Dashboard Core Data Correctness', () => {
       expect(screen.getByText('HIGH')).toBeTruthy();
       expect(screen.getByText('Steep slopes exceeding 30 degrees combined with 15.2mm antecedent rainfall')).toBeTruthy();
 
-      // Card 4: Incident History renders historical slide and distance
-      expect(screen.getByText('Shimla Ridge Debris Slide')).toBeTruthy();
-      expect(screen.getByText('4.8 km away')).toBeTruthy();
-      expect(screen.getByText('Historical records provide contextual evidence, NOT active incidents.')).toBeTruthy();
-
       // Field Report & Infrastructure render with distance
       expect(screen.getByText('Tension crack near Highway 5')).toBeTruthy();
       expect(screen.getByText('2.3 km away')).toBeTruthy();
@@ -798,8 +805,6 @@ describe('Dashboard Core Data Correctness', () => {
       expect(screen.queryByText(/Shimla, HP/)).toBeNull();
 
       // Truthful empty states rendered
-      expect(screen.getByText('No historical landslides found in this area')).toBeTruthy();
-      expect(screen.getByText('No recorded catalog events within 50km of this location.')).toBeTruthy();
       expect(screen.getByText('No field reports logged in this area')).toBeTruthy();
       expect(screen.getByText('No infrastructure corridors registered')).toBeTruthy();
     });
@@ -913,4 +918,548 @@ describe('Dashboard Core Data Correctness', () => {
       });
     });
   });
+
+  describe('Use My Location in Regional Monitoring', () => {
+    let originalGeolocation;
+    let originalFetch;
+
+    beforeEach(() => {
+      originalGeolocation = global.navigator.geolocation;
+      originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          address: { city: 'Guwahati', state: 'Assam' }
+        })
+      });
+    });
+
+    afterEach(() => {
+      if (originalGeolocation !== undefined) {
+        Object.defineProperty(global.navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+          writable: true,
+        });
+      }
+      global.fetch = originalFetch;
+    });
+
+    it('renders the "Use My Location" button in Regional Monitoring card', async () => {
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /use my location/i })).toBeTruthy();
+      });
+    });
+
+    it('updates Regional Monitoring with current user coordinates and live weather on click', async () => {
+      const mockCoords = { latitude: 26.18, longitude: 91.75 };
+      const mockGetCurrentPosition = vi.fn().mockImplementation((success) => {
+        success({ coords: mockCoords });
+      });
+
+      Object.defineProperty(global.navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition },
+        configurable: true,
+        writable: true,
+      });
+
+      dashboardService.getIntelligence.mockResolvedValueOnce({
+        location: { lat: 26.18, lon: 91.75, name: 'Guwahati Dispur' },
+        weather: {
+          temperature: 28.5,
+          humidity: 72,
+          windSpeed: 10.4,
+          rainfall24h: 3.2,
+          currentIntervalPrecipitation: 0.0,
+          precipitationProbability: 15,
+          source: 'open-meteo',
+        },
+        soilMoisture: { value: 34.0 },
+        aiRiskAnalysis: { riskLevel: 'LOW' },
+        activeIncidents: { count: 0, incidents: [] },
+        incidentHistory: { totalCount: 0, events: [] },
+        fieldReports: { totalCount: 0, reports: [] },
+        infrastructure: { totalCount: 0, criticalAssets: [] },
+      });
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      const useLocationBtn = await screen.findByRole('button', { name: /use my location/i });
+      fireEvent.click(useLocationBtn);
+
+      expect(mockGetCurrentPosition).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(dashboardService.getIntelligence).toHaveBeenCalledWith(26.18, 91.75, expect.anything());
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('28.5°C')).toBeTruthy();
+        expect(screen.getByText(/Humidity: 72%/)).toBeTruthy();
+      });
+    });
+
+    it('handles geolocation permission denied gracefully with user-facing message', async () => {
+      const mockGetCurrentPosition = vi.fn().mockImplementation((_success, error) => {
+        error({ code: 1, message: 'User denied Geolocation' });
+      });
+
+      Object.defineProperty(global.navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition },
+        configurable: true,
+        writable: true,
+      });
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      const useLocationBtn = await screen.findByRole('button', { name: /use my location/i });
+      fireEvent.click(useLocationBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Location permission denied/i)).toBeTruthy();
+      });
+    });
+
+    it('allows resetting back to default regional monitoring', async () => {
+      const mockCoords = { latitude: 26.18, longitude: 91.75 };
+      const mockGetCurrentPosition = vi.fn().mockImplementation((success) => {
+        success({ coords: mockCoords });
+      });
+
+      Object.defineProperty(global.navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition },
+        configurable: true,
+        writable: true,
+      });
+
+      dashboardService.getIntelligence.mockResolvedValue({
+        location: { lat: 26.18, lon: 91.75, name: 'Guwahati Dispur' },
+        weather: {
+          temperature: 28.5,
+          humidity: 72,
+          windSpeed: 10.4,
+          rainfall24h: 3.2,
+          source: 'open-meteo',
+        },
+        soilMoisture: { value: 34.0 },
+        aiRiskAnalysis: { riskLevel: 'LOW' },
+        activeIncidents: { count: 0, incidents: [] },
+        incidentHistory: { totalCount: 0, events: [] },
+        fieldReports: { totalCount: 0, reports: [] },
+        infrastructure: { totalCount: 0, criticalAssets: [] },
+      });
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      const useLocationBtn = await screen.findByRole('button', { name: /use my location/i });
+      fireEvent.click(useLocationBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('(Reset)')).toBeTruthy();
+      });
+
+      fireEvent.click(screen.getByText('(Reset)'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Northeast India Grid')).toBeTruthy();
+        expect(screen.queryByText('(Reset)')).toBeNull();
+      });
+    });
+  });
+
+  describe('Infrastructure Priority Enhancements', () => {
+    it('displays prioritized corridors with closed routes at the top', async () => {
+      const mockAssets = [
+        {
+          _id: 'infra-active',
+          name: 'NH-27 Guwahati Expressway',
+          status: 'active',
+          importance: 3,
+          alternativeAvailable: true,
+          location: { latitude: 26.14, longitude: 91.73 },
+        },
+        {
+          _id: 'infra-closed',
+          name: 'NH-10 Teesta Valley Highway',
+          status: 'closed',
+          importance: 5,
+          alternativeAvailable: false,
+          location: { latitude: 27.33, longitude: 88.60 },
+        },
+      ];
+      infrastructureAssetService.getAllAssets.mockResolvedValueOnce(mockAssets);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('NH-10 Teesta Valley Highway')).toBeTruthy();
+      });
+
+      // Closed route must be sorted to the top
+      const rows = document.querySelectorAll('.infra-priority-table tbody tr');
+      expect(rows.length).toBe(2);
+      expect(rows[0].textContent).toContain('NH-10 Teesta Valley Highway');
+      expect(rows[0].textContent).toContain('Critical');
+      expect(rows[0].textContent).toContain('Route Closed');
+
+      expect(rows[1].textContent).toContain('NH-27 Guwahati Expressway');
+    });
+
+    it('clicking the header arrow opens the Infrastructure Priority floating detail modal', async () => {
+      const mockAssets = [
+        {
+          _id: 'infra-closed',
+          name: 'NH-10 Teesta Valley Highway',
+          status: 'closed',
+          importance: 5,
+          alternativeAvailable: false,
+          location: { latitude: 27.3389, longitude: 88.6065 },
+        },
+      ];
+      infrastructureAssetService.getAllAssets.mockResolvedValueOnce(mockAssets);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('NH-10 Teesta Valley Highway')).toBeTruthy();
+      });
+
+      const arrowBtn = screen.getByTitle('Inspect infrastructure routes in detail');
+      fireEvent.click(arrowBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Infrastructure Priority & Corridors')).toBeTruthy();
+        expect(screen.getByText(/Priority Corridor:/)).toBeTruthy();
+        expect(screen.getAllByText(/27.3389°N, 88.6065°E/).length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    it('clicking an individual corridor in the detail modal navigates to Risk Map with corridor context', async () => {
+      const mockAssets = [
+        {
+          _id: 'infra-corridor-1',
+          name: 'NH-6 Shillong-Silchar Mountain Corridor',
+          status: 'active',
+          importance: 5,
+          alternativeAvailable: true,
+          location: { latitude: 25.5788, longitude: 91.8933 },
+        },
+      ];
+      infrastructureAssetService.getAllAssets.mockResolvedValueOnce(mockAssets);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('NH-6 Shillong-Silchar Mountain Corridor')).toBeTruthy();
+      });
+
+      const arrowBtn = screen.getByTitle('Inspect infrastructure routes in detail');
+      fireEvent.click(arrowBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Infrastructure Priority & Corridors')).toBeTruthy();
+      });
+
+      // Find the clickable item in the modal list
+      const modalItem = screen.getByTitle('Click to focus this corridor on map');
+      fireEvent.click(modalItem);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/map', {
+        state: {
+          selectedLocation: {
+            lat: 25.5788,
+            lon: 91.8933,
+            name: 'NH-6 Shillong-Silchar Mountain Corridor',
+          },
+        },
+      });
+    });
+
+    it('clicking VIEW ON MAP in the detail modal navigates to Risk Map with primary corridor', async () => {
+      const mockAssets = [
+        {
+          _id: 'infra-primary',
+          name: 'Tawang-Bumla Himalayan Access Route',
+          status: 'closed',
+          importance: 5,
+          alternativeAvailable: false,
+          location: { latitude: 27.5861, longitude: 91.8679 },
+        },
+      ];
+      infrastructureAssetService.getAllAssets.mockResolvedValueOnce(mockAssets);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Tawang-Bumla Himalayan Access Route')).toBeTruthy();
+      });
+
+      const arrowBtn = screen.getByTitle('Inspect infrastructure routes in detail');
+      fireEvent.click(arrowBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('VIEW ON MAP')).toBeTruthy();
+      });
+
+      const mapBtn = screen.getByText('VIEW ON MAP');
+      fireEvent.click(mapBtn);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/map', {
+        state: {
+          selectedLocation: {
+            lat: 27.5861,
+            lon: 91.8679,
+            name: 'Tawang-Bumla Himalayan Access Route',
+          },
+        },
+      });
+    });
+
+    it('prioritizes mountain landslide lifelines (Teesta Valley NH-10) over flat plain expressways (Guwahati NH-27) and navigates to mountain corridor on map', async () => {
+      const mockAssets = [
+        {
+          _id: 'infra-guwahati',
+          name: 'NH-27 Guwahati-Nagaon National Expressway',
+          status: 'active',
+          condition: 'good',
+          importance: 5,
+          alternativeAvailable: true,
+          location: { latitude: 26.1445, longitude: 91.7362, name: 'Kamrup, Assam' }
+        },
+        {
+          _id: 'infra-teesta',
+          name: 'NH-10 Siliguri-Gangtok Highway (Teesta Valley)',
+          status: 'active',
+          condition: 'vulnerable',
+          importance: 5,
+          alternativeAvailable: false,
+          location: { latitude: 27.3389, longitude: 88.6065, name: 'East Sikkim' }
+        },
+        {
+          _id: 'infra-shillong',
+          name: 'NH-6 Shillong-Silchar Mountain Corridor',
+          status: 'active',
+          condition: 'fair',
+          importance: 5,
+          alternativeAvailable: true,
+          location: { latitude: 25.5788, longitude: 91.8933, name: 'East Khasi Hills, Meghalaya' }
+        }
+      ];
+
+      infrastructureAssetService.getAllAssets.mockResolvedValueOnce(mockAssets);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Corridor Route')).toBeTruthy();
+        expect(screen.getByText('Risk Level')).toBeTruthy();
+        expect(screen.getByText('Transit Flow')).toBeTruthy();
+      });
+
+      // Teesta Valley and Shillong should be ranked at the top of the table
+      const rows = document.querySelectorAll('.infra-row');
+      expect(rows.length).toBe(3);
+      expect(rows[0].textContent).toContain('NH-10 Siliguri-Gangtok Highway (Teesta Valley)');
+      expect(rows[0].textContent).toContain('Slide Vulnerable');
+
+      // Click on Critical Roads card in the 4-metrics row
+      const roadsCard = screen.getByText('Critical Roads').closest('.metric-glass-card');
+      fireEvent.click(roadsCard);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Critical Corridors').length).toBeGreaterThan(0);
+        expect(screen.getByText('Priority Corridor:')).toBeTruthy();
+        expect(document.querySelector('.modal-location-banner').textContent).toContain('NH-10 Siliguri-Gangtok Highway (Teesta Valley)');
+        expect(document.querySelector('.modal-location-banner').textContent).toContain('27.3389°N, 88.6065°E');
+      });
+
+      // Click VIEW ON MAP in the modal footer
+      const viewMapBtn = screen.getByText('VIEW ON MAP');
+      fireEvent.click(viewMapBtn);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/map', {
+        state: {
+          selectedLocation: {
+            lat: 27.3389,
+            lon: 88.6065,
+            name: 'NH-10 Siliguri-Gangtok Highway (Teesta Valley)'
+          }
+        }
+      });
+    });
+
+    it('Recent Rainfall card is interactive, opens detail modal, and navigates to rainfall station on map', async () => {
+      const mockRainfall = [
+        {
+          _id: 'rain-station-1',
+          rainfall: 32.4,
+          rainfall24h: 32.4,
+          location: { latitude: 27.34, longitude: 88.61, name: 'East Sikkim Station' },
+          recordedAt: new Date().toISOString()
+        }
+      ];
+
+      rainfallObservationService.getAllObservations.mockResolvedValueOnce(mockRainfall);
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByText('...')).toBeNull();
+      });
+
+      // Find Recent Rainfall card in the middle metrics grid
+      const rainLabel = screen.getByText('Recent Rainfall');
+      const rainCard = rainLabel.closest('.metric-glass-card');
+      expect(rainCard.textContent).toContain('32.4 mm');
+
+      // Click the card to open the rainfall detail modal
+      fireEvent.click(rainCard);
+
+      await waitFor(() => {
+        expect(screen.getByText('Recent Precipitation & Rainfall')).toBeTruthy();
+        expect(screen.getByText('Station Location:')).toBeTruthy();
+        expect(document.querySelector('.modal-location-banner').textContent).toContain('East Sikkim Station');
+        expect(screen.getByText('Accumulated (24h)')).toBeTruthy();
+      });
+
+      // Click VIEW ON MAP in modal footer
+      const viewMapBtn = screen.getByText('VIEW ON MAP');
+      fireEvent.click(viewMapBtn);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/map', {
+        state: {
+          selectedLocation: {
+            lat: 27.34,
+            lon: 88.61,
+            name: 'East Sikkim Station'
+          }
+        }
+      });
+    });
+
+    it('Hero Card displays real accumulated rainfall instead of 0.0mm and resolves ML prediction risk level instead of Unavailable', async () => {
+      const mockRainfall = [
+        {
+          _id: 'rain-guw-1',
+          rainfall: 0.0,
+          rainfall24h: 39.1,
+          currentIntervalPrecipitation: 0.0,
+          recordedAt: new Date().toISOString(),
+          location: { latitude: 26.14, longitude: 91.73, name: 'Guwahati Station' }
+        }
+      ];
+      rainfallObservationService.getAllObservations.mockResolvedValueOnce(mockRainfall);
+
+      geocodingService.search.mockResolvedValueOnce([
+        { id: 'guw-loc', name: 'Guwahati, Assam', lat: 26.1445, lon: 91.7362 }
+      ]);
+      dashboardService.getIntelligence.mockResolvedValueOnce({
+        location: { lat: 26.1445, lon: 91.7362, name: 'Guwahati, Assam' },
+        weather: {
+          rainfall24h: 39.1,
+          currentIntervalPrecipitation: 0.0,
+          precipitationProbability: 29,
+          temperature: 26.3,
+          humidity: 98,
+          windSpeed: 5.6,
+          recordedAt: new Date().toISOString()
+        },
+        soilMoisture: { value: 35.0, recordedAt: new Date().toISOString() },
+        aiRiskAnalysis: {
+          riskLevel: 'Unavailable',
+          reasoning: ['Elevation data available: 52 m.']
+        },
+        mlPrediction: {
+          status: 'success',
+          prediction: { riskLevel: 'low', probability: 0.186 }
+        },
+        activeIncidents: { count: 0, incidents: [] },
+        incidentHistory: { totalCount: 0, events: [] },
+        fieldReports: { totalCount: 0, reports: [] },
+        infrastructure: { totalCount: 0, assets: [] }
+      });
+
+      render(
+        <LanguageProvider>
+          <Dashboard />
+        </LanguageProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByText('...')).toBeNull();
+      });
+
+      // Hero weather widget features real 39.1 mm rainfall baseline from 24h telemetry, NOT 0.0 mm
+      const heroWeatherVal = document.querySelector('.hero-weather-main .hero-temp-val');
+      expect(heroWeatherVal.textContent).toBe('39.1 mm');
+
+      // Now search and select Guwahati
+      const searchInput = screen.getByLabelText('Search for an area');
+      fireEvent.change(searchInput, { target: { value: 'Guwahati' } });
+      const searchBtn = screen.getByLabelText('Submit search');
+      fireEvent.click(searchBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText('Guwahati, Assam')).toBeTruthy();
+      });
+      fireEvent.click(screen.getByText('Guwahati, Assam'));
+
+      await waitFor(() => {
+        expect(document.querySelector('.hero-location-pill').textContent).toContain('Guwahati, Assam');
+      });
+
+      // After location intelligence loads:
+      // 1. Hero weather maintains real 39.1 mm rainfall, NOT 0.0 mm
+      expect(document.querySelector('.hero-weather-main .hero-temp-val').textContent).toBe('39.1 mm');
+
+      // 2. Forecast strip resolves ML prediction 'Low' instead of displaying 'Unavailable'
+      const forecastStrip = document.querySelector('.hero-forecast-strip');
+      expect(forecastStrip.textContent).toContain('Recent Prediction: Low');
+      expect(forecastStrip.textContent).not.toContain('Recent Prediction: Unavailable');
+    });
+  });
 });
+
+

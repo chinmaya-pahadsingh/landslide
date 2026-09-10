@@ -64,7 +64,7 @@ export default function AppLayout() {
 
   const navigation = [
     { name: t('Dashboard'), href: '/', icon: Home },
-    { name: t('Area Intelligence'), href: '/map', icon: Map },
+    { name: t('Area Intelligence'), href: '/area-intelligence', icon: Map },
     { 
       name: t('Alerts'), 
       href: '/alerts', 
@@ -104,7 +104,9 @@ export default function AppLayout() {
         <nav className="sidebar-nav">
           {navigation.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.href || (item.href === '/map' && (location.pathname === '/map' || location.pathname === '/area-intelligence'));
+            const isActive = location.pathname === item.href || 
+              (item.href === '/area-intelligence' && (location.pathname === '/area-intelligence' || location.pathname === '/map')) ||
+              (item.href === '/map' && (location.pathname === '/map' || location.pathname === '/area-intelligence'));
             
             return (
               <Link

@@ -99,7 +99,7 @@ export default function GlobalSearch() {
   const sections = useMemo(() => [
     { id: 'sec-dash', title: t('Dashboard'), path: '/', category: 'Sections', icon: Layout },
     { id: 'sec-map', title: t('Risk Map'), path: '/map', category: 'Sections', icon: Compass },
-    { id: 'sec-ai', title: t('Area Intelligence'), path: '/map', category: 'Sections', icon: Compass },
+    { id: 'sec-ai', title: t('Area Intelligence'), path: '/area-intelligence', category: 'Sections', icon: Compass },
     { id: 'sec-alerts', title: t('Alerts'), path: '/alerts', category: 'Sections', icon: AlertTriangle },
     { id: 'sec-rep', title: t('Field Reports'), path: '/reports', category: 'Sections', icon: Activity },
     { id: 'sec-news', title: t('News'), path: '/news', category: 'Sections', icon: ExternalLink }

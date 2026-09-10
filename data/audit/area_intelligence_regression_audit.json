@@ -1,0 +1,81 @@
+{
+  "audit_step": "STEP AREA-INTELLIGENCE-REGRESSION-AUDIT",
+  "audit_type": "READ_ONLY_DIAGNOSTIC_AUDIT",
+  "timestamp": "2026-09-10T17:37:00.000Z",
+  "classification": "B. FRONTEND REGRESSION",
+  "reproduction_result": {
+    "navigation_action": "Clicked 'Area Intelligence' in sidebar navigation (AppLayout)",
+    "target_route": "/map (or /area-intelligence)",
+    "rendered_component": "RiskMap",
+    "observed_behavior": "Page loads clean full-screen GIS map with 10,236 historical catalogue markers, but NO Area Intelligence is displayed. selectedLocation is null, showIntelligence is false, and AreaIntelligencePanel is not mounted. No error message is shown, no API request is fired, and no intelligence metrics appear.",
+    "console_errors": "None. JavaScript execution succeeds without runtime exception.",
+    "network_errors": "None. Zero HTTP requests are dispatched for /api/area-intelligence because the component requires a selectedLocation before triggering."
+  },
+  "root_cause_analysis": {
+    "primary_cause": "Route & State Decoupling in Sidebar Navigation: In AppLayout.jsx, the primary sidebar item is labeled 'Area Intelligence' and links to '/map' (or '/area-intelligence'). However, RiskMap.jsx conditionally renders AreaIntelligencePanel strictly when 'showIntelligence && selectedLocation' are truthy. A fresh navigation from the sidebar provides neither a location query param (?lat=...&lon=...) nor a router navigation state ({ state: { selectedLocation } }). Consequently, the page initializes with selectedLocation=null and showIntelligence=false, leaving the user on a raw map view without the promised Area Intelligence.",
+    "secondary_cause_marker_popup": "In Leaflet popup button handling, PopupIntelButton previously had pointerup event listener with e.preventDefault(), which suppressed subsequent browser click dispatching and React synthetic event handling in Chromium/WebKit browsers. Furthermore, SelectedLocationMarker lacked inline intelligence state, so clicking 'Analyze Area Intelligence' inside the popup did not update the popup itself with intelligence metrics.",
+    "authentication_coupling": "AreaIntelligencePanel in AreaIntelligencePanel.jsx enforces authentication (currentToken required), rendering an 'Authentication Required' login prompt if a guest visits the coordinate. For authenticated users, backend /api/area-intelligence returns full multi-source fusion data."
+  },
+  "affected_files": [
+    "frontend/src/layouts/AppLayout.jsx",
+    "frontend/src/App.jsx",
+    "frontend/src/pages/RiskMap.jsx",
+    "frontend/src/components/AreaIntelligencePanel.jsx",
+    "frontend/src/components/AreaIntelligencePanel.css"
+  ],
+  "api_status": {
+    "endpoint": "GET /api/area-intelligence?lat=...&lon=...",
+    "http_status_unauthenticated": 401,
+    "http_status_authenticated": 200,
+    "response_time_ms": 32,
+    "response_fields_verified": [
+      "selectedLocation",
+      "searchRadiusMeters",
+      "providerStatus",
+      "evidenceAvailability",
+      "earlyWarning",
+      "evidenceFusion",
+      "mlPrediction",
+      "satelliteEvidence",
+      "weather",
+      "nearbyInfrastructure",
+      "relevantNews",
+      "contextualData",
+      "retrievedAt"
+    ],
+    "upstream_providers": {
+      "open_meteo_elevation": "OPERATIONAL (elevation: 2050m, slope: 15.38°)",
+      "open_meteo_soil_moisture": "OPERATIONAL (latestValue: 27%)",
+      "open_meteo_rainfall": "OPERATIONAL (cached fallback active)",
+      "xgboost_ml_model": "OPERATIONAL (prob: 9.49%, class: 0)",
+      "sentinel2_satellite": "OPERATIONAL (Built Area, classCode: 7)"
+    }
+  },
+  "data_status": {
+    "status": "DATA_AVAILABLE",
+    "distinction": "No missing external data or fake values. All 7 environmental telemetry sources fuse deterministically into evidenceFusion and earlyWarning."
+  },
+  "test_results": {
+    "suites_run": 5,
+    "tests_run": 87,
+    "passed": 87,
+    "failed": 0,
+    "breakdown": {
+      "AreaIntelligencePanel.test.jsx": { "tests": 23, "passed": 23, "failed": 0 },
+      "riskMapRegressionFix.test.jsx": { "tests": 18, "passed": 18, "failed": 0 },
+      "RiskMap.test.jsx": { "tests": 19, "passed": 19, "failed": 0 },
+      "AreaSearch.test.jsx": { "tests": 12, "passed": 12, "failed": 0 },
+      "riskMapHistoricalCurrentModes.test.jsx": { "tests": 15, "passed": 15, "failed": 0 }
+    }
+  },
+  "recent_change_correlation": {
+    "historical_current_mode_separation": "The introduction of orthogonal Historical Density vs Current Risk layer toggles strictly isolated dataset filters and HUD legends. It did not break the AreaIntelligencePanel component, but highlighted the gap where a fresh map load from the 'Area Intelligence' sidebar link does not provide a default regional intelligence focus coordinate.",
+    "marker_click_and_popup_fix": "Commit 0c92792 resolved the popup button pointerup event suppression and added direct inline intelligence summary into SelectedLocationMarker, ensuring tapping a location details popup directly reveals intelligence metrics."
+  },
+  "minimal_recommended_fix": {
+    "recommendation_1_default_focus_or_drawer": "When the user navigates to '/area-intelligence' (or clicks 'Area Intelligence' in the sidebar), initialize selectedLocation with a default regional focus coordinate (e.g. Northeast Regional Center [26.20, 92.93] or Guwahati Gateway [26.1445, 91.7362]) with showIntelligence=true so the Area Intelligence analysis is immediately loaded and displayed on screen upon arrival.",
+    "recommendation_2_route_consistency": "Update AppLayout.jsx sidebar navigation so 'Area Intelligence' links to '/area-intelligence' (or '/map?mode=intelligence'), preserving clean semantic distinction between general Risk Map exploration and focused Area Intelligence inspection.",
+    "risk_map_impact": "Risk Map marker rendering, basemap toggling (Terrain <-> Satellite), and historical density clustering remain 100% intact and unaffected."
+  },
+  "regression_severity": "MEDIUM (Functional routing/state gap: backend pipeline is 100% operational, but frontend navigation link requires active coordinate context to display intelligence)"
+}

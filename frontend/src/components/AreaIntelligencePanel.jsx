@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Map, CloudRain, Droplets, Activity, FileText, Building, AlertTriangle, Mountain, Lock, Cpu, ShieldAlert, Satellite } from 'lucide-react';
+import { X, Map, CloudRain, Droplets, Activity, FileText, Building, AlertTriangle, Mountain, Lock, Cpu, ShieldAlert, Satellite, RefreshCw } from 'lucide-react';
 import { areaIntelligenceService } from '../services/areaIntelligenceService';
 import { satelliteService } from '../services/satelliteService';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,8 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
   const [error, setError] = useState(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  // Refresh trigger: incrementing this re-runs the intelligence fetch for the same location
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!selectedLocation) {
@@ -28,12 +30,10 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
 
     const currentToken = auth.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('jwt_token') : null);
 
-    // 1. If auth state is still loading from storage, wait and do not flash authRequired
+    // If auth state is still loading from storage, wait and do not flash authRequired
     if (!currentToken) {
       if (auth.loading) {
         setLoading(true);
-        setAuthRequired(false);
-        setPermissionDenied(false);
         return;
       }
       setData(null);
@@ -57,7 +57,7 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
       setAuthRequired(false);
       setPermissionDenied(false);
 
-      // Concurrently query satellite land-cover; fail-safe catch ensures it never blocks core intelligence
+      // Concurrently query satellite land-cover (Step 54D); fail-safe catch ensures it never blocks core intelligence
       Promise.resolve()
         .then(() => satelliteService?.getLandCover?.(selectedLocation.lat, selectedLocation.lon, abortController.signal))
         .then((satData) => {
@@ -74,6 +74,7 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
         });
 
       try {
+        // Main intelligence call — already includes satelliteEvidence in response (no duplicate call needed)
         const result = await areaIntelligenceService.getIntelligence(
           selectedLocation.lat,
           selectedLocation.lon,
@@ -113,7 +114,8 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
     return () => {
       abortController.abort();
     };
-  }, [selectedLocation?.lat, selectedLocation?.lon, auth.token, auth.loading]);
+  // refreshKey allows the Refresh button to re-trigger fetch for the same coordinates
+  }, [selectedLocation?.lat, selectedLocation?.lon, auth.token, auth.loading, refreshKey]);
 
   if (!selectedLocation) return null;
 
@@ -124,11 +126,29 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
           <Map size={18} />
           Area Intelligence
         </h3>
-        {onClose && (
-          <button className="ai-panel-close" onClick={onClose} aria-label="Close panel">
-            <X size={18} />
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          {/* Refresh button: re-triggers intelligence fetch for the current location */}
+          {selectedLocation && !loading && (
+            <button
+              className="ai-panel-close"
+              onClick={() => setRefreshKey(k => k + 1)}
+              aria-label="Refresh area intelligence"
+              title="Refresh intelligence data"
+            >
+              <RefreshCw size={15} />
+            </button>
+          )}
+          {loading && (
+            <button className="ai-panel-close" disabled aria-label="Loading..." title="Loading...">
+              <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
+            </button>
+          )}
+          {onClose && (
+            <button className="ai-panel-close" onClick={onClose} aria-label="Close panel">
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="ai-panel-content">
@@ -236,7 +256,11 @@ export function AreaIntelligencePanel({ selectedLocation, onClose }) {
 
         {!loading && !authRequired && !permissionDenied && error && (
           <div style={{ padding: '1rem 0' }}>
-            <ErrorState title="Intelligence Error" message={error} />
+            <ErrorState
+              title="Intelligence Error"
+              message={error}
+              onRetry={() => setRefreshKey(k => k + 1)}
+            />
           </div>
         )}
 

@@ -124,12 +124,16 @@ export default function NotificationCenter() {
         <div className="notification-dropdown">
           <div className="dropdown-header">
             <h3>{t('Notifications')}</h3>
-            {unreadCount > 0 && (
-              <button className="mark-all-btn" onClick={handleMarkAllAsRead}>
-                <CheckCircle2 size={14} />
-                {t('Mark all read')}
-              </button>
-            )}
+            <button 
+              className="mark-all-btn" 
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0}
+              style={{ opacity: unreadCount === 0 ? 0.6 : 1 }}
+              title={unreadCount > 0 ? t('Mark all read') : t('All notifications read')}
+            >
+              <CheckCircle2 size={14} />
+              {unreadCount > 0 ? t('Mark all read') : t('All read')}
+            </button>
           </div>
           
           <div className="dropdown-body">
@@ -162,16 +166,15 @@ export default function NotificationCenter() {
                         </div>
                       )}
                     </div>
-                    {!notification.isRead && (
-                      <button 
-                        className="mark-read-single" 
-                        onClick={(e) => handleMarkAsRead(notification._id, e)}
-                        title="Mark as read"
-                        aria-label="Mark as read"
-                      >
-                        <Check size={16} />
-                      </button>
-                    )}
+                    <button 
+                      className={`mark-read-single ${notification.isRead ? 'read' : ''}`} 
+                      onClick={(e) => !notification.isRead && handleMarkAsRead(notification._id, e)}
+                      title={notification.isRead ? t('Read') : t('Mark as read')}
+                      aria-label={notification.isRead ? t('Read') : t('Mark as read')}
+                      disabled={notification.isRead}
+                    >
+                      <Check size={16} />
+                    </button>
                   </div>
                 ))}
               </div>

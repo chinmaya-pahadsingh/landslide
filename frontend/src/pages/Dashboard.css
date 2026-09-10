@@ -822,6 +822,36 @@
   opacity: 0.4;
 }
 
+.alert-mark-read-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.alert-mark-read-btn:hover:not(:disabled) {
+  background: #2dd4bf;
+  color: #0f172a;
+}
+
+.alert-mark-read-btn.read,
+.alert-mark-read-btn:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: hsl(var(--text-muted));
+  cursor: default;
+}
+
 /* Report Feed Items */
 .reports-stack {
   display: flex;

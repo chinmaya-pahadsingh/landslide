@@ -147,16 +147,15 @@ export default function Alerts() {
           </p>
         </div>
         <div className="alerts-header-actions">
-          {unreadCount > 0 && (
-            <button 
-              className="btn btn-outline"
-              onClick={handleMarkAllAsRead}
-              title="Mark all alerts as read"
-            >
-              <CheckCircle2 size={15} />
-              <span>{t('Mark all read')}</span>
-            </button>
-          )}
+          <button 
+            className={`btn ${unreadCount > 0 ? 'btn-primary' : 'btn-outline'}`}
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0 || refreshing || loading}
+            title={unreadCount > 0 ? t('Mark all alerts as read') : t('All alerts are read')}
+          >
+            <CheckCircle2 size={15} />
+            <span>{unreadCount > 0 ? t('Mark all read') : t('All read')}</span>
+          </button>
           <button 
             className="btn btn-outline"
             onClick={handleRefresh}
@@ -383,16 +382,15 @@ export default function Alerts() {
                   )}
                 </div>
 
-                {!alert.isRead && (
-                  <button 
-                    className="btn btn-outline btn-sm"
-                    onClick={() => handleMarkAsRead(alert._id)}
-                    title="Mark alert as read"
-                  >
-                    <Check size={13} />
-                    <span>Mark as read</span>
-                  </button>
-                )}
+                <button 
+                  className={`btn btn-sm ${alert.isRead ? 'btn-outline text-muted' : 'btn-primary'}`}
+                  onClick={() => handleMarkAsRead(alert._id)}
+                  disabled={alert.isRead}
+                  title={alert.isRead ? t('Alert is marked as read') : t('Mark alert as read')}
+                >
+                  <Check size={13} />
+                  <span>{alert.isRead ? t('Read') : t('Mark as read')}</span>
+                </button>
               </div>
             </div>
           ))}

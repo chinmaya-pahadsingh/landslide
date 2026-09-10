@@ -26,6 +26,7 @@ import {
   CloudSun,
   Truck,
   CheckCircle2,
+  Check,
   AlertCircle,
   History,
   FileText,
@@ -140,6 +141,17 @@ export default function Dashboard() {
       setFieldReports(Array.isArray(repData) ? repData : []);
     } catch {
       setFieldReports([]);
+    }
+  };
+
+  const handleMarkAlertAsRead = async (id) => {
+    if (!id) return;
+    setAlerts(prev => prev.map(a => (a._id === id || a.id === id) ? { ...a, isRead: true } : a));
+    window.dispatchEvent(new CustomEvent('alertsUpdated'));
+    try {
+      await notificationAPI.markAsRead(id);
+    } catch (err) {
+      console.warn('Failed to mark alert as read on server:', err);
     }
   };
 
@@ -833,6 +845,19 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
+                    <button
+                      className={`alert-mark-read-btn ${alert.isRead ? 'read' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAlertAsRead(alert._id || alert.id);
+                      }}
+                      title={alert.isRead ? t('Read') : t('Mark as read')}
+                      aria-label={alert.isRead ? t('Read') : t('Mark as read')}
+                      disabled={alert.isRead}
+                    >
+                      <Check size={13} />
+                      <span>{alert.isRead ? t('Read') : t('Mark read')}</span>
+                    </button>
                   </div>
                 );
               })

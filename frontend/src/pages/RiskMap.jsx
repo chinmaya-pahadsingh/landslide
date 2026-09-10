@@ -44,12 +44,129 @@ const SATELLITE_REFERENCE_LAYER = {
   subdomains: ['server', 'services']
 };
 
+// Bulletproof button for Leaflet popups: attaches native DOM listener with stopPropagation
+// to guarantee execution even when Leaflet's disableClickPropagation suppresses React synthetic root bubbling.
+function PopupIntelButton({ onClick, children, className = "map-popup-intel-btn" }) {
+  const btnRef = useRef(null);
+  const lastClickRef = useRef(0);
+
+  const trigger = useCallback((e) => {
+    const now = Date.now();
+    if (now - lastClickRef.current < 250) {
+      return;
+    }
+    lastClickRef.current = now;
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    onClick?.(e);
+  }, [onClick]);
+
+  useEffect(() => {
+    const el = btnRef.current;
+    if (!el) return;
+
+    const handleNative = (e) => {
+      trigger(e);
+    };
+
+    el.addEventListener('click', handleNative);
+    el.addEventListener('pointerup', handleNative);
+    el.addEventListener('touchend', handleNative);
+    return () => {
+      el.removeEventListener('click', handleNative);
+      el.removeEventListener('pointerup', handleNative);
+      el.removeEventListener('touchend', handleNative);
+    };
+  }, [trigger]);
+
+  return (
+    <button
+      ref={btnRef}
+      type="button"
+      className={className}
+      onClick={trigger}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Interactive marker for selected / clicked location that automatically opens details popup
+function SelectedLocationMarker({ selectedLocation, onAnalyze }) {
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (markerRef.current && selectedLocation) {
+      const timer = setTimeout(() => {
+        try {
+          if (markerRef.current) {
+            markerRef.current.openPopup();
+          }
+        } catch {}
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedLocation?.lat, selectedLocation?.lon]);
+
+  if (!selectedLocation) return null;
+
+  const isMapClick = selectedLocation.triggerSource === 'map_click';
+
+  return (
+    <CircleMarker
+      ref={markerRef}
+      center={[selectedLocation.lat, selectedLocation.lon]}
+      radius={9}
+      pathOptions={{
+        fillColor: 'hsl(217, 91%, 60%)', // Distinct Blue
+        fillOpacity: 0.9,
+        color: '#ffffff',
+        weight: 3
+      }}
+    >
+      <Popup autoClose={false} closeButton={true}>
+        <div className="popup-content">
+          <div className="popup-header">
+            <MapPin size={14} />
+            <span>{isMapClick ? 'Location Details' : (selectedLocation.triggerSource === 'search' ? 'Searched Location' : 'Selected Location')}</span>
+          </div>
+          <div className="popup-row">
+            <span className="popup-value bold">{selectedLocation.name}</span>
+          </div>
+          <div className="popup-row">
+            <span className="popup-label">Coordinates</span>
+            <span className="popup-value mono">
+              {selectedLocation.lat.toFixed(4)}°, {selectedLocation.lon.toFixed(4)}°
+            </span>
+          </div>
+          <div className="popup-row">
+            <span className="popup-label">Region</span>
+            <span className="popup-value">Northeast India GIS Grid</span>
+          </div>
+          <PopupIntelButton
+            onClick={() => onAnalyze?.(selectedLocation)}
+          >
+            Analyze Area Intelligence
+          </PopupIntelButton>
+        </div>
+      </Popup>
+    </CircleMarker>
+  );
+}
+
 // Helper to handle clicks anywhere on the Leaflet map viewport
 function MapClickHandler({ onLocationSelect }) {
   useMapEvents({
     click(e) {
-      // Guard against events originating from control buttons, HUD, legend, or popups
       const origEvent = e?.originalEvent;
+      // If the click was directly on an existing hazard marker, let marker handler open its popup
+      if (origEvent?._isMarkerClick) {
+        return;
+      }
+
+      // Guard against events originating from control buttons, HUD, legend, or popups
       const target = origEvent?.target;
       if (
         target &&
@@ -366,6 +483,11 @@ export default function RiskMap() {
               color: '#ffffff',
               weight: 1.5
             }}
+            eventHandlers={{
+              click: (e) => {
+                if (e?.originalEvent) e.originalEvent._isMarkerClick = true;
+              }
+            }}
           >
             <Popup>
               <div className="popup-content">
@@ -432,9 +554,7 @@ export default function RiskMap() {
                 <div style={{ marginTop: '0.4rem', fontSize: '0.68rem', color: 'hsl(var(--text-muted))', borderTop: '1px solid var(--glass-border)', paddingTop: '0.35rem', fontStyle: 'italic' }}>
                   Reflects past documented activity only — NOT a current hazard, prediction, or early warning.
                 </div>
-                <button
-                  type="button"
-                  className="map-popup-intel-btn"
+                <PopupIntelButton
                   onClick={() => handleLocationSelect({
                     lat: event.location.latitude,
                     lon: event.location.longitude,
@@ -442,7 +562,7 @@ export default function RiskMap() {
                   }, 'marker_click')}
                 >
                   Analyze Area Intelligence
-                </button>
+                </PopupIntelButton>
               </div>
             </Popup>
           </CircleMarker>
@@ -466,6 +586,11 @@ export default function RiskMap() {
             fillOpacity: 0.85,
             color: '#ffffff',
             weight: 2
+          }}
+          eventHandlers={{
+            click: (e) => {
+              if (e?.originalEvent) e.originalEvent._isMarkerClick = true;
+            }
           }}
         >
           <Popup>
@@ -507,9 +632,7 @@ export default function RiskMap() {
                   {event.description}
                 </div>
               )}
-              <button
-                type="button"
-                className="map-popup-intel-btn"
+              <PopupIntelButton
                 onClick={() => handleLocationSelect({
                   lat: event.location.latitude,
                   lon: event.location.longitude,
@@ -517,7 +640,7 @@ export default function RiskMap() {
                 }, 'marker_click')}
               >
                 Analyze Area Intelligence
-              </button>
+              </PopupIntelButton>
             </div>
           </Popup>
         </CircleMarker>
@@ -723,36 +846,10 @@ export default function RiskMap() {
             <MapUpdater selectedLocation={selectedLocation} />
             <MapClickHandler onLocationSelect={handleLocationSelect} />
             
-            {selectedLocation && (
-              <CircleMarker
-                center={[selectedLocation.lat, selectedLocation.lon]}
-                radius={9}
-                pathOptions={{
-                  fillColor: 'hsl(217, 91%, 60%)', // Distinct Blue
-                  fillOpacity: 0.9,
-                  color: '#ffffff',
-                  weight: 3
-                }}
-              >
-                <Popup>
-                  <div className="popup-content">
-                    <div className="popup-header">
-                      <MapPin size={14} />
-                      <span>Searched Location</span>
-                    </div>
-                    <div className="popup-row">
-                      <span className="popup-value bold">{selectedLocation.name}</span>
-                    </div>
-                    <div className="popup-row">
-                      <span className="popup-label">Coordinates</span>
-                      <span className="popup-value mono">
-                        {selectedLocation.lat.toFixed(4)}°, {selectedLocation.lon.toFixed(4)}°
-                      </span>
-                    </div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            )}
+            <SelectedLocationMarker 
+              selectedLocation={selectedLocation} 
+              onAnalyze={(loc) => handleLocationSelect(loc, loc.triggerSource || 'marker_click')} 
+            />
             
             {renderedMarkers}
           </MapContainer>

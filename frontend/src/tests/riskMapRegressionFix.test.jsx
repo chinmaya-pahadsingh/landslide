@@ -534,5 +534,31 @@ describe('STEP 54D-FIX: Risk Map Regression & Core Fix Verification', () => {
       expect(screen.getAllByText('Gangtok, Sikkim').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText(/27.3389°, 88.6065°/).length).toBeGreaterThanOrEqual(1);
     });
+
+    it('31 & 32: Map click renders location details popup and functional Analyze Area Intelligence button', async () => {
+      render(<RiskMap />);
+      await waitFor(() => expect(screen.queryByText(/Loading geospatial risk data/i)).toBeNull());
+
+      expect(registeredMapClickHandler).toBeTruthy();
+      registeredMapClickHandler({
+        latlng: { lat: 25.5788, lng: 91.8842 },
+        originalEvent: {
+          target: document.createElement('div')
+        }
+      });
+
+      // Location Details popup header and coordinates appear
+      expect(await screen.findByText('Location Details')).toBeTruthy();
+      expect(screen.getAllByText(/25.5788°, 91.8842°/).length).toBeGreaterThanOrEqual(1);
+
+      // Analyze Area Intelligence button is present
+      const intelBtns = screen.getAllByRole('button', { name: /Analyze Area Intelligence/i });
+      expect(intelBtns.length).toBeGreaterThanOrEqual(1);
+
+      // Clicking Analyze Area Intelligence opens Area Intelligence panel
+      fireEvent.click(intelBtns[0]);
+      expect(await screen.findByText('Area Intelligence')).toBeTruthy();
+    });
   });
 });
+

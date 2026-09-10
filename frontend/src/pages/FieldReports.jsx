@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fieldReportService } from '../services/fieldReportService';
 import { offlineQueueService } from '../services/offlineQueueService';
 import { useNetwork } from '../contexts/NetworkContext';
@@ -17,9 +17,87 @@ import {
   Radio, 
   Compass, 
   ShieldAlert,
-  Activity
+  Activity,
+  Image as ImageIcon,
+  Camera,
+  Paperclip,
+  X,
+  Eye,
+  Download,
+  File
 } from 'lucide-react';
 import './FieldReports.css';
+
+// Client-side image compression & format normalization
+const compressImageFile = (file) => {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        fileData: reader.result
+      });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDimension = 1280;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        resolve({
+          fileName: file.name.replace(/\.[^/.]+$/, "") + ".jpg",
+          fileType: 'image/jpeg',
+          fileSize: Math.round((compressedDataUrl.length * 3) / 4),
+          fileData: compressedDataUrl
+        });
+      };
+      img.onerror = () => {
+        resolve({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          fileData: e.target.result
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+};
 
 const REPORT_TYPES = [
   { value: 'landslide', label: 'Landslide' },
@@ -54,6 +132,62 @@ export default function FieldReports() {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+
+  // Attachments State
+  const [attachments, setAttachments] = useState([]);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedImageModal, setSelectedImageModal] = useState(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+
+  const handleFiles = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    setSubmitError(null);
+
+    const remainingSlots = 5 - attachments.length;
+    if (remainingSlots <= 0) {
+      setSubmitError('Maximum 5 attachments allowed per report.');
+      return;
+    }
+
+    const filesToProcess = Array.from(fileList).slice(0, remainingSlots);
+    setIsProcessingFiles(true);
+
+    try {
+      const processed = [];
+      for (const file of filesToProcess) {
+        if (file.size > 5 * 1024 * 1024) {
+          setSubmitError(`File "${file.name}" exceeds the 5MB size limit.`);
+          continue;
+        }
+
+        const isImage = file.type.startsWith('image/');
+        const isPdf = file.type === 'application/pdf';
+
+        if (!isImage && !isPdf) {
+          setSubmitError(`Unsupported format for "${file.name}". Please upload images or PDF files.`);
+          continue;
+        }
+
+        const dataObj = await compressImageFile(file);
+        processed.push(dataObj);
+      }
+
+      setAttachments(prev => [...prev, ...processed]);
+    } catch (err) {
+      console.error('Error processing attachments:', err);
+      setSubmitError('Failed to process file upload. Please try again.');
+    } finally {
+      setIsProcessingFiles(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (idxToRemove) => {
+    setAttachments(prev => prev.filter((_, i) => i !== idxToRemove));
+  };
 
   const fetchReports = async () => {
     try {
@@ -194,6 +328,15 @@ export default function FieldReports() {
         payload.description = formData.description.trim();
       }
 
+      if (attachments.length > 0) {
+        payload.attachments = attachments.map(att => ({
+          fileName: att.fileName,
+          fileType: att.fileType,
+          fileSize: att.fileSize,
+          fileData: att.fileData
+        }));
+      }
+
       // OFFLINE RESPONSE-LOSS DUPLICATION FIX:
       // Generate a single stable idempotency key for this specific submission attempt.
       // Whether it goes live or into the queue, this exact key ensures it is never saved twice.
@@ -228,6 +371,7 @@ export default function FieldReports() {
         longitude: '',
         description: ''
       });
+      setAttachments([]);
       
     } catch (err) {
       setSubmitError(err.message || 'Failed to submit report. Please try again.');
@@ -424,6 +568,124 @@ export default function FieldReports() {
               ></textarea>
             </div>
 
+            {/* Photo & Document Upload from Device */}
+            <div className="form-group upload-group">
+              <div className="form-label-row">
+                <label className="form-label">
+                  Photos & Document Evidence <span className="optional-tag">(Optional, max 5)</span>
+                </label>
+                <div className="upload-quick-actions">
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-upload-trigger"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={isSubmitting || isProcessingFiles || attachments.length >= 5}
+                    title="Take a photo with device camera"
+                  >
+                    <Camera size={13} />
+                    <span>Camera</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-upload-trigger"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isSubmitting || isProcessingFiles || attachments.length >= 5}
+                    title="Browse device files"
+                  >
+                    <Paperclip size={13} />
+                    <span>Choose File</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Hidden file inputs */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={(e) => handleFiles(e.target.files)} 
+                multiple 
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" 
+                style={{ display: 'none' }} 
+              />
+              <input 
+                type="file" 
+                ref={cameraInputRef} 
+                onChange={(e) => handleFiles(e.target.files)} 
+                accept="image/*" 
+                capture="environment" 
+                style={{ display: 'none' }} 
+              />
+
+              {/* Drag & drop dropzone */}
+              <div 
+                className={`file-dropzone ${isDragging ? 'dropzone-active' : ''} ${attachments.length >= 5 ? 'dropzone-disabled' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); if (attachments.length < 5) setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (attachments.length < 5) handleFiles(e.dataTransfer.files);
+                }}
+                onClick={() => {
+                  if (attachments.length < 5 && !isProcessingFiles) fileInputRef.current?.click();
+                }}
+              >
+                <div className="dropzone-content">
+                  <div className="dropzone-icon-wrap">
+                    {isProcessingFiles ? (
+                      <LoadingSpinner size="small" />
+                    ) : (
+                      <UploadCloud size={22} className="dropzone-icon" />
+                    )}
+                  </div>
+                  <div className="dropzone-text-group">
+                    <span className="dropzone-primary-text">
+                      {isProcessingFiles 
+                        ? 'Optimizing and preparing files...' 
+                        : attachments.length >= 5 
+                          ? 'Maximum 5 files attached' 
+                          : 'Click to upload or drag & drop files from your device'}
+                    </span>
+                    <span className="dropzone-subtext">
+                      Supports JPG, PNG, WEBP, and PDF documents (up to 5MB each)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Previews of attached files */}
+              {attachments.length > 0 && (
+                <div className="attachments-preview-grid">
+                  {attachments.map((att, idx) => (
+                    <div key={idx} className="attachment-preview-card">
+                      {att.fileType?.startsWith('image/') || att.fileData?.startsWith('data:image/') ? (
+                        <div className="preview-img-container">
+                          <img src={att.fileData} alt={att.fileName} className="preview-thumb-img" />
+                        </div>
+                      ) : (
+                        <div className="preview-doc-icon-wrap">
+                          <File size={24} className="preview-doc-icon" />
+                        </div>
+                      )}
+                      <div className="preview-info-col">
+                        <span className="preview-filename" title={att.fileName}>{att.fileName}</span>
+                        <span className="preview-filesize">{formatFileSize(att.fileSize)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-remove-attachment"
+                        onClick={(e) => { e.stopPropagation(); removeAttachment(idx); }}
+                        title="Remove file"
+                        aria-label={`Remove ${att.fileName}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="form-actions">
               <button 
                 type="submit" 
@@ -572,6 +834,47 @@ export default function FieldReports() {
                       <p className="report-desc-text">{report.description}</p>
                     </div>
                   )}
+
+                  {/* Attached Evidence Gallery */}
+                  {report.attachments && report.attachments.length > 0 && (
+                    <div className="report-attachments-gallery">
+                      <div className="attachments-header-row">
+                        <Paperclip size={12} className="text-muted" />
+                        <span className="attachments-count-label">
+                          {report.attachments.length} {report.attachments.length === 1 ? 'Evidence File' : 'Evidence Files'} Attached
+                        </span>
+                      </div>
+                      <div className="attachments-grid">
+                        {report.attachments.map((att, idx) => (
+                          att.fileType?.startsWith('image/') || att.fileData?.startsWith('data:image/') ? (
+                            <div 
+                              key={idx} 
+                              className="attachment-thumb-card"
+                              onClick={() => setSelectedImageModal(att)}
+                              title={`Click to preview full photo: ${att.fileName || 'Photo'}`}
+                            >
+                              <img src={att.fileData} alt={att.fileName || 'Ground Photo'} className="attachment-thumb-img" />
+                              <div className="thumb-hover-overlay">
+                                <Eye size={16} />
+                              </div>
+                            </div>
+                          ) : (
+                            <a 
+                              key={idx} 
+                              href={att.fileData} 
+                              download={att.fileName || 'document.pdf'}
+                              className="attachment-doc-pill"
+                              title={`Download document: ${att.fileName || 'Document'}`}
+                            >
+                              <File size={13} className="doc-icon" />
+                              <span className="doc-name">{att.fileName || 'Document'}</span>
+                              <Download size={12} className="doc-download-icon" />
+                            </a>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -579,6 +882,45 @@ export default function FieldReports() {
         </div>
         
       </div>
+
+      {/* Lightbox Image Preview Modal */}
+      {selectedImageModal && (
+        <div className="image-lightbox-backdrop" onClick={() => setSelectedImageModal(null)}>
+          <div className="image-lightbox-container glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title-group">
+                <ImageIcon size={16} className="text-accent" />
+                <span className="lightbox-title">{selectedImageModal.fileName || 'Attached Photo'}</span>
+              </div>
+              <div className="lightbox-actions">
+                <a 
+                  href={selectedImageModal.fileData} 
+                  download={selectedImageModal.fileName || 'field_evidence.jpg'}
+                  className="btn btn-outline btn-lightbox-download"
+                  title="Download Image"
+                >
+                  <Download size={14} />
+                  <span>Download</span>
+                </a>
+                <button 
+                  className="btn-lightbox-close" 
+                  onClick={() => setSelectedImageModal(null)}
+                  aria-label="Close image preview"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="lightbox-body">
+              <img 
+                src={selectedImageModal.fileData} 
+                alt={selectedImageModal.fileName || 'Full Evidence'} 
+                className="lightbox-full-img" 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

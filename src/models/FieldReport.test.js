@@ -13,6 +13,24 @@ const tests = [
     shouldFail: false
   },
   {
+    label: 'Valid field report with attachments',
+    input: {
+      location: { latitude: 25.123, longitude: 91.123 },
+      reportType: 'landslide',
+      source: 'field_team',
+      description: 'Photos attached from site.',
+      attachments: [
+        {
+          fileName: 'landslide_road.jpg',
+          fileType: 'image/jpeg',
+          fileData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD',
+          fileSize: 1024
+        }
+      ]
+    },
+    shouldFail: false
+  },
+  {
     label: 'Missing required location',
     input: {
       reportType: 'crack',

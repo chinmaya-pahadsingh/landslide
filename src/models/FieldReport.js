@@ -55,7 +55,31 @@ const fieldReportSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
-    }
+    },
+    attachments: [
+      {
+        fileName: {
+          type: String,
+          trim: true,
+          maxlength: 255
+        },
+        fileType: {
+          type: String,
+          trim: true,
+          maxlength: 100
+        },
+        fileData: {
+          type: String
+        },
+        fileSize: {
+          type: Number
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ]
   },
   {
     timestamps: true,

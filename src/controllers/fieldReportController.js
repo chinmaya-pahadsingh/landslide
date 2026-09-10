@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const createFieldReport = async (req, res) => {
   try {
-    const { location, reportType, description, reportedAt, source, status } = req.body;
+    const { location, reportType, description, reportedAt, source, status, attachments } = req.body;
     const idempotencyKey = req.headers['x-idempotency-key'];
 
     if (idempotencyKey && typeof idempotencyKey !== 'string') {
@@ -21,6 +21,18 @@ const createFieldReport = async (req, res) => {
     if (reportedAt !== undefined) reportData.reportedAt = reportedAt;
     if (status !== undefined) reportData.status = status;
     if (idempotencyKey) reportData.idempotencyKey = idempotencyKey;
+
+    if (attachments !== undefined) {
+      if (Array.isArray(attachments)) {
+        reportData.attachments = attachments.slice(0, 5).map(att => ({
+          fileName: typeof att.fileName === 'string' ? att.fileName.slice(0, 255) : 'attachment',
+          fileType: typeof att.fileType === 'string' ? att.fileType.slice(0, 100) : 'application/octet-stream',
+          fileData: typeof att.fileData === 'string' ? att.fileData : '',
+          fileSize: typeof att.fileSize === 'number' ? att.fileSize : 0,
+          uploadedAt: att.uploadedAt ? new Date(att.uploadedAt) : new Date()
+        })).filter(att => att.fileData && (att.fileData.startsWith('data:image/') || att.fileData.startsWith('data:application/pdf') || att.fileData.startsWith('data:text/')));
+      }
+    }
 
     // STEP 44: Assign authenticated user if present
     if (req.user && req.user._id) {

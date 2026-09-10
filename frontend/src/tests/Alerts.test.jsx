@@ -134,4 +134,30 @@ describe('Alerts Component', () => {
       expect(screen.getByText(/Failed to fetch alerts/i)).toBeTruthy();
     });
   });
+
+  it('safely renders alerts with object source without crashing the display', async () => {
+    notificationAPI.getAll.mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            _id: 'n3',
+            title: 'IMD Monsoon Advisory',
+            message: 'Heavy precipitation recorded across Sohra.',
+            severity: 'warning',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            location: { name: 'Cherrapunji, Meghalaya' },
+            source: { type: 'early_warning_system', referenceId: 'IMD-EKH-001' }
+          }
+        ]
+      }
+    });
+
+    render(<Alerts />);
+
+    await waitFor(() => {
+      expect(screen.getByText('IMD Monsoon Advisory')).toBeTruthy();
+      expect(screen.getByText(/early warning system • IMD-EKH-001/i)).toBeTruthy();
+    });
+  });
 });

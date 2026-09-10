@@ -25,6 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AuthModal from '../components/AuthModal';
 import GlobalSearch from '../components/GlobalSearch';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { notificationAPI } from '../services/api';
 import './AppLayout.css';
 
@@ -207,7 +208,9 @@ export default function AppLayout() {
 
         {/* Page Content */}
         <main className="page-wrapper" id="main-content">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

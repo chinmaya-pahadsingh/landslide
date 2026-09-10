@@ -121,6 +121,19 @@ export default function Alerts() {
     }
   };
 
+  const formatSource = (source) => {
+    if (!source) return null;
+    if (typeof source === 'string') return source.replace(/_/g, ' ');
+    if (typeof source === 'object') {
+      if (source.name) return source.name;
+      const parts = [];
+      if (source.type) parts.push(source.type.replace(/_/g, ' '));
+      if (source.referenceId) parts.push(source.referenceId);
+      return parts.length > 0 ? parts.join(' • ') : 'System';
+    }
+    return String(source);
+  };
+
   return (
     <div className="page-container animate-fade-in alerts-page-wrapper">
       {/* Header */}
@@ -337,7 +350,11 @@ export default function Alerts() {
 
                 <div className="alert-card-time">
                   <Clock size={13} />
-                  <span>{new Date(alert.createdAt).toLocaleString()}</span>
+                  <span>
+                    {alert.createdAt && !isNaN(new Date(alert.createdAt).getTime())
+                      ? new Date(alert.createdAt).toLocaleString()
+                      : t('Recent')}
+                  </span>
                 </div>
               </div>
 
@@ -351,15 +368,15 @@ export default function Alerts() {
 
               <div className="alert-card-footer">
                 <div className="alert-footer-left">
-                  {alert.location?.name && (
+                  {(alert.location?.name || (typeof alert.location === 'string' && alert.location)) && (
                     <span className="alert-location-tag">
                       <MapPin size={13} />
-                      {alert.location.name}
+                      {typeof alert.location === 'string' ? alert.location : alert.location.name}
                     </span>
                   )}
-                  {alert.source && (
+                  {formatSource(alert.source) && (
                     <span className="alert-source-tag text-muted">
-                      Source: {alert.source}
+                      Source: {formatSource(alert.source)}
                     </span>
                   )}
                 </div>

@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const landslideEventRoutes = require('./routes/landslideEventRoutes');
 const riskAssessmentRoutes = require('./routes/riskAssessmentRoutes');
@@ -41,10 +43,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Landslide Monitoring Backend is running');
-});
-
+// API Routes
 app.use('/api/landslide-events', landslideEventRoutes);
 app.use('/api/risk-assessment', riskAssessmentRoutes);
 app.use('/api/rainfall', rainfallObservationRoutes);
@@ -59,6 +58,22 @@ app.use('/api/area-intelligence', areaIntelligenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/satellite', satelliteRoutes);
+
+// Static frontend serving if built
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(frontendDistPath, 'index.html'));
+    }
+    next();
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('Landslide Monitoring Backend is running');
+  });
+}
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {

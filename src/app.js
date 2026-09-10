@@ -44,7 +44,11 @@ const corsOptions = {
           originUrl.hostname.endsWith('.loca.lt') ||
           originUrl.hostname.endsWith('.pinggy.link') ||
           originUrl.hostname.endsWith('.onrender.com') ||
-          originUrl.hostname.endsWith('.railway.app')
+          originUrl.hostname.endsWith('.railway.app') ||
+          originUrl.hostname.endsWith('.vercel.app') ||
+          originUrl.hostname.endsWith('.netlify.app') ||
+          originUrl.hostname.endsWith('.pages.dev') ||
+          originUrl.hostname.endsWith('.github.io')
         ) {
           isAllowed = true;
         }

@@ -8,7 +8,7 @@ class OpenMeteoProvider {
    * @returns {Promise<Object>} An object containing the volumetric soil moisture fraction (m3/m3) and the timestamp.
    */
   static async fetchSoilMoisture(lat, lon) {
-    const timeout = parseInt(process.env.WEATHER_API_TIMEOUT_MS, 10) || 5000;
+    const timeout = parseInt(process.env.WEATHER_API_TIMEOUT_MS, 10) || 10000;
     
     try {
       const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
@@ -16,6 +16,9 @@ class OpenMeteoProvider {
           latitude: lat,
           longitude: lon,
           current: 'soil_moisture_0_to_1cm'
+        },
+        headers: {
+          'User-Agent': 'LandslideEarlyWarning/1.0.0 (https://github.com/chinmaya-pahadsingh/landslide)'
         },
         timeout: timeout
       });
@@ -64,7 +67,7 @@ class OpenMeteoProvider {
    *   - recordedAt: Date of the current observation
    */
   static async fetchRainfall(lat, lon) {
-    const timeout = parseInt(process.env.WEATHER_API_TIMEOUT_MS, 10) || 5000;
+    const timeout = parseInt(process.env.WEATHER_API_TIMEOUT_MS, 10) || 10000;
     
     try {
       const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
@@ -77,6 +80,9 @@ class OpenMeteoProvider {
           timezone: 'auto',
           past_hours: 24,
           forecast_hours: 1
+        },
+        headers: {
+          'User-Agent': 'LandslideEarlyWarning/1.0.0 (https://github.com/chinmaya-pahadsingh/landslide)'
         },
         timeout: timeout
       });
